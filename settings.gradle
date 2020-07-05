@@ -1,0 +1,11 @@
+include ':gesture'
+include ':layouttransition'
+include ':datastructure'
+include ':relativelayout'
+include ':table'
+include ':message'
+include ':drawable'
+include ':nested'
+include ':animator'
+include ':app'
+rootProject.name = "AndroidSampleProjects"

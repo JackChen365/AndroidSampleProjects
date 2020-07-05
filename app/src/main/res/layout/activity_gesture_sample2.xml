@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.cz.android.gesture.SimpleFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout1"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/md_blue_500"
+    tools:context=".gesture.GestureSample2Activity">
+
+    <com.cz.android.gesture.SimpleFrameLayout
+        android:id="@+id/layout2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="48dp"
+        android:background="@color/md_green_600"
+        app:layout_gravity1="center">
+
+        <com.cz.android.gesture.SimpleView
+            android:id="@+id/layout3"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            app:layout_gravity1="center"
+            android:background="@drawable/primary_item_selector"/>
+
+    </com.cz.android.gesture.SimpleFrameLayout>
+
+</com.cz.android.gesture.SimpleFrameLayout>

@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.cz.android.relativelayout.constraint.SimpleConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp"
+    android:background="@color/md_grey_200">
+
+    <View
+        android:id="@+id/view1"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_blue_100"
+        android:layout_marginTop="8dp"
+        app:layout_simple_constraintLeft_toLeftOf="parent"
+        app:layout_simple_constraintTop_toTopOf="parent"/>
+
+    <View
+        android:id="@+id/view2"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_blue_200"
+        app:layout_simple_constraintLeft_toRightOf="@id/view1"
+        app:layout_simple_constraintTop_toTopOf="@id/view1"
+        android:layout_marginLeft="4dp" />
+
+   <View
+        android:id="@+id/view3"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_blue_300"
+        app:layout_simple_constraintLeft_toRightOf="@id/view2"
+       app:layout_simple_constraintTop_toTopOf="@id/view1"
+        android:layout_marginLeft="4dp" />
+
+    <View
+        android:id="@+id/view4"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_blue_400"
+        app:layout_simple_constraintLeft_toRightOf="@id/view3"
+        app:layout_simple_constraintTop_toTopOf="@id/view1"
+        android:layout_marginLeft="4dp" />
+
+   <View
+        android:id="@+id/view5"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_green_100"
+        android:layout_marginTop="4dp"
+        app:layout_simple_constraintTop_toBottomOf="@+id/view1"
+        app:layout_simple_constraintLeft_toLeftOf="parent" />
+
+    <View
+       android:id="@+id/view6"
+       android:layout_width="40dp"
+       android:layout_height="40dp"
+       android:background="@color/md_green_200"
+       app:layout_simple_constraintTop_toTopOf="@+id/view5"
+       app:layout_simple_constraintLeft_toRightOf="@+id/view5"
+       android:layout_marginLeft="4dp" />
+
+    <View
+        android:id="@+id/view7"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_green_300"
+        app:layout_simple_constraintTop_toTopOf="@+id/view5"
+        app:layout_simple_constraintLeft_toRightOf="@+id/view6"
+        android:layout_marginLeft="4dp" />
+
+    <View
+        android:id="@+id/view8"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_green_400"
+        app:layout_simple_constraintTop_toTopOf="@+id/view5"
+        app:layout_simple_constraintLeft_toRightOf="@+id/view7"
+        android:layout_marginLeft="4dp" />
+
+
+   <View
+        android:id="@+id/view9"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_yellow_200"
+        app:layout_simple_constraintRight_toRightOf="parent"
+        app:layout_simple_constraintTop_toBottomOf="@+id/view5"
+        android:layout_marginTop="4dp" />
+
+    <View
+        android:id="@+id/view10"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_yellow_300"
+        android:layout_marginRight="4dp"
+        app:layout_simple_constraintRight_toLeftOf="@+id/view9"
+        app:layout_simple_constraintTop_toTopOf="@id/view9"
+        android:layout_marginLeft="4dp" />
+
+    <View
+        android:id="@+id/view11"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_yellow_400"
+        android:layout_marginRight="4dp"
+        app:layout_simple_constraintRight_toLeftOf="@+id/view10"
+        app:layout_simple_constraintTop_toTopOf="@id/view9"
+        android:layout_marginLeft="4dp" />
+
+    <View
+        android:id="@+id/view12"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_yellow_500"
+        android:layout_marginRight="4dp"
+        app:layout_simple_constraintRight_toLeftOf="@+id/view11"
+        app:layout_simple_constraintTop_toTopOf="@id/view9"
+        android:layout_marginLeft="4dp" />
+
+     <View
+         android:id="@+id/view13"
+         android:layout_width="40dp"
+         android:layout_height="40dp"
+         android:background="@color/md_green_600"
+         app:layout_simple_constraintLeft_toLeftOf="parent"
+         app:layout_simple_constraintBottom_toBottomOf="parent"
+         app:layout_simple_constraintRight_toRightOf="parent"
+         android:visibility="gone"
+         android:layout_marginBottom="12dp"
+         android:layout_marginLeft="4dp" />
+
+     <TextView
+         android:id="@+id/view14"
+         android:layout_width="120dp"
+         android:layout_height="120dp"
+         android:background="@color/md_green_500"
+         android:gravity="center"
+         android:textColor="@color/md_white_1000"
+         app:layout_simple_constraintLeft_toLeftOf="parent"
+         app:layout_simple_constraintTop_toTopOf="parent"
+         app:layout_simple_constraintRight_toRightOf="parent"
+         app:layout_simple_constraintBottom_toBottomOf="parent"
+         android:layout_marginLeft="4dp"
+         android:text="Text"/>
+
+    <TextView
+        android:id="@+id/view15"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:background="@color/md_red_800"
+        android:gravity="center"
+        android:padding="4dp"
+        app:layout_simple_constraintLeft_toLeftOf="@id/view14"
+        app:layout_simple_constraintRight_toRightOf="@id/view14"
+        app:layout_simple_constraintTop_toTopOf="@id/view14"
+        app:layout_simple_constraintBottom_toBottomOf="@id/view14"
+        android:textColor="@color/md_white_1000"
+        android:layout_marginLeft="4dp"
+        android:text="Text15"/>
+
+    <TextView
+        android:id="@+id/view16"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_red_800"
+        android:gravity="center"
+        android:padding="4dp"
+        android:layout_marginLeft="8dp"
+        app:layout_simple_constraintLeft_toRightOf="@id/view14"
+        app:layout_simple_constraintTop_toTopOf="@id/view14"
+        app:layout_simple_constraintBottom_toBottomOf="@id/view14"
+        android:textColor="@color/md_white_1000"
+        android:text="Text16"/>
+
+    <TextView
+        android:id="@+id/view17"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_red_800"
+        android:gravity="center"
+        android:padding="4dp"
+        android:layout_marginBottom="8dp"
+        app:layout_simple_constraintLeft_toLeftOf="@id/view14"
+        app:layout_simple_constraintRight_toRightOf="@id/view14"
+        app:layout_simple_constraintBottom_toTopOf="@id/view14"
+        android:textColor="@color/md_white_1000"
+        android:text="Text17"/>
+
+    <TextView
+        android:id="@+id/view18"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_red_800"
+        android:gravity="center"
+        android:layout_marginTop="8dp"
+        app:layout_simple_constraintLeft_toLeftOf="@id/view14"
+        app:layout_simple_constraintRight_toRightOf="@id/view14"
+        app:layout_simple_constraintTop_toBottomOf="@id/view14"
+        android:textColor="@color/md_white_1000"
+        android:text="Text"/>
+
+    <TextView
+        android:id="@+id/view19"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/md_red_800"
+        android:gravity="center"
+        android:padding="4dp"
+        android:layout_marginRight="8dp"
+        app:layout_simple_constraintTop_toTopOf="@id/view14"
+        app:layout_simple_constraintBottom_toBottomOf="@id/view14"
+        app:layout_simple_constraintRight_toLeftOf="@id/view14"
+        android:textColor="@color/md_white_1000"
+        android:text="Text19"/>
+
+    <View
+        android:id="@+id/view20"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@color/md_amber_400"
+        android:layout_marginLeft="8dp"
+        app:layout_simple_constraintLeft_toLeftOf="@id/view14"
+        app:layout_simple_constraintTop_toTopOf="@id/view14"
+        app:layout_simple_constraintBottom_toBottomOf="@id/view14"/>
+
+    <View
+        android:id="@+id/view21"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@color/md_amber_400"
+        android:layout_marginTop="8dp"
+        app:layout_simple_constraintLeft_toLeftOf="@id/view14"
+        app:layout_simple_constraintRight_toRightOf="@id/view14"
+        app:layout_simple_constraintTop_toTopOf="@id/view14"/>
+
+    <View
+        android:id="@+id/view22"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@color/md_amber_400"
+        android:layout_marginRight="8dp"
+        app:layout_simple_constraintRight_toRightOf="@id/view14"
+        app:layout_simple_constraintTop_toTopOf="@id/view14"
+        app:layout_simple_constraintBottom_toBottomOf="@id/view14"/>
+
+    <View
+        android:id="@+id/view23"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@color/md_amber_400"
+        android:layout_marginBottom="8dp"
+        app:layout_simple_constraintLeft_toLeftOf="parent"
+        app:layout_simple_constraintBottom_toBottomOf="parent"/>
+
+
+    <View
+        android:id="@+id/view24"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:background="@color/md_red_600"
+        android:layout_marginBottom="8dp"
+        app:layout_simple_constraintLeft_toLeftOf="@id/view23"
+        app:layout_simple_constraintRight_toRightOf="@id/view25"
+        app:layout_simple_constraintBottom_toBottomOf="parent"/>
+
+    <View
+        android:id="@+id/view25"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@color/md_amber_400"
+        android:layout_marginBottom="8dp"
+        app:layout_simple_constraintRight_toRightOf="parent"
+        app:layout_simple_constraintBottom_toBottomOf="parent"/>
+
+</com.cz.android.relativelayout.constraint.SimpleConstraintLayout>

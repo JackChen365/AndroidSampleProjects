@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base attributes that are available to all Drawable objects. -->
+    <declare-styleable name="BaseDrawable">
+        <!-- Provides initial visibility state of the drawable; the default
+             value is false.  See
+             {@link android.graphics.drawable.Drawable#setVisible}. -->
+        <attr name="base_visible" format="boolean" />
+        <!-- Indicates if the drawable needs to be mirrored when its layout direction is
+             RTL (right-to-left).  See
+             {@link android.graphics.drawable.Drawable#setAutoMirrored}. -->
+        <attr name="base_autoMirrored" format="boolean" />
+    </declare-styleable>
+
+
+    <!-- Describes an item (or child) of a LayerDrawable. -->
+    <declare-styleable name="RippleLayerDrawableItem">
+        <!-- Left coordinate of the layer. -->
+        <attr name="ripple_left" format="dimension"/>
+        <!-- Top coordinate of the layer. -->
+        <attr name="ripple_top" format="dimension"/>
+        <!-- Right coordinate of the layer. -->
+        <attr name="ripple_right" format="dimension"/>
+        <!-- Bottom coordinate of the layer. -->
+        <attr name="ripple_bottom" format="dimension"/>
+        <!-- Drawable used to render the layer. -->
+        <attr name="ripple_drawable" format="dimension"/>
+        <!-- Identifier of the layer. This can be used to retrieve the layer
+             from a drawable container. -->
+        <attr name="ripple_id" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="RippleLayerDrawable">
+        <!-- Indicates the opacity of the layer. This can be useful to allow the
+              system to enable drawing optimizations. The default value is
+              translucent. -->
+        <attr name="ripple_opacity">
+            <!-- Indicates that the layer is opaque and contains no transparent
+                 nor translucent pixels. -->
+            <enum name="opaque" value="-1" />
+            <!-- The layer is completely transparent (no pixel will be drawn.) -->
+            <enum name="transparent" value="-2" />
+            <!-- The layer has translucent pixels. -->
+            <enum name="translucent" value="-3" />
+        </attr>
+        <!-- Indicates if the drawable needs to be mirrored when its layout direction is
+             RTL (right-to-left). -->
+        <attr name="ripple_autoMirrored" format="boolean"/>
+        <!-- Indicates how layer padding should affect the bounds of subsequent layers.
+             The default padding mode value is nest. -->
+        <attr name="ripple_paddingMode">
+            <!-- Nest each layer inside the padding of the previous layer. -->
+            <enum name="nest" value="0" />
+            <!-- Stack each layer directly atop the previous layer. -->
+            <enum name="stack" value="1" />
+        </attr>
+    </declare-styleable>
+
+</resources>

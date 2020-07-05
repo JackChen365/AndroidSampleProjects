@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="fixedGridLayout" format="reference"/>
+    <declare-styleable name="FixedGridLayout">
+        <attr name="fixed_cellWidth" format="dimension"/>
+        <attr name="fixed_cellHeight" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="RippleTextView">
+        <attr name="ripple_background" format="reference"/>
+    </declare-styleable>
+</resources>
