@@ -9,6 +9,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".nested.sample4.NestedScrollSample4Activity"></activity>
+        <activity android:name=".recycler.RecyclerViewRecyclerTestActivity" />
+        <activity android:name=".nested.sample3.NestedScrollSample3Activity" />
+        <activity android:name=".nested.sample2.NestedScrollSample2Activity" />
+        <activity android:name=".nested.sample1.NestedScrollSample1Activity" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -16,9 +21,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".message.HandleSampleActivity"/>
-        <activity android:name=".table.TableSampleActivity"></activity>
+        <activity android:name=".message.HandleSampleActivity" />
+        <activity android:name=".table.TableSampleActivity" />
         <activity android:name=".gesture.GestureSample2Activity" />
         <activity android:name=".gesture.GestureSampleActivity" />
         <activity android:name=".drawable.RippleDrawableSampleActivity" />
@@ -28,6 +32,7 @@
         <activity android:name=".animator.AnimatorEngineSampleActivity" />
         <activity android:name=".animator.CloneAnimatorSampleActivity" />
         <activity android:name=".animator.AnimatorSetSampleActivity" />
+        <activity android:name=".listview.SimpleListViewSampleActivity" />
     </application>
 
 </manifest>

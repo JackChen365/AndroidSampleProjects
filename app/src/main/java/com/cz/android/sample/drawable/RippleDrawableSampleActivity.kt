@@ -11,6 +11,10 @@ import com.cz.android.sample.api.Register
 import kotlinx.android.synthetic.main.activity_ripple_drawable_sample.*
 
 
+/**
+ * Why Android RippleDrawable could draw outside the view
+ * https://stackoverflow.com/questions/45808796/how-do-rippledrawable-draw-outside-view-bounds
+ */
 @Register(title = "RippleDrawable")
 class RippleDrawableSampleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +27,9 @@ class RippleDrawableSampleActivity : AppCompatActivity() {
     }
 
     private fun initializeRipple1() {
-        textView1.setRippleBackground(RippleDrawable(ColorStateList.valueOf(Color.RED),null,null));
+        val rippleDrawable = RippleDrawable(ColorStateList.valueOf(Color.RED),null,null);
+        rippleDrawable.maxRadius=200
+        textView1.setRippleBackground(rippleDrawable);
     }
 
     private fun initializeRipple2() {

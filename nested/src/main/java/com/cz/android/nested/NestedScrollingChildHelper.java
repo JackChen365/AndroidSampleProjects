@@ -5,10 +5,11 @@ import android.view.ViewParent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.NestedScrollingChild2;
+import androidx.core.view.NestedScrollingChild3;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewCompat.NestedScrollType;
 import androidx.core.view.ViewCompat.ScrollAxis;
-import androidx.core.view.ViewParentCompat;
 
 import static androidx.core.view.ViewCompat.TYPE_NON_TOUCH;
 import static androidx.core.view.ViewCompat.TYPE_TOUCH;
@@ -29,6 +30,7 @@ import static androidx.core.view.ViewCompat.TYPE_TOUCH;
  * 5.0 Lollipop and newer.</p>
  */
 public class NestedScrollingChildHelper {
+    private static final String TAG="NestedScrollingChildHelper";
     private ViewParent mNestedScrollingParentTouch;
     private ViewParent mNestedScrollingParentNonTouch;
     private final View mView;
@@ -298,7 +300,6 @@ public class NestedScrollingChildHelper {
                     startX = offsetInWindow[0];
                     startY = offsetInWindow[1];
                 }
-
                 if (consumed == null) {
                     consumed = getTempNestedScrollConsumed();
                 }

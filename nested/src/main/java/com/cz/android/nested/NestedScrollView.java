@@ -31,6 +31,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.InputDeviceCompat;
+import androidx.core.view.NestedScrollingChild3;
+import androidx.core.view.NestedScrollingParent3;
 import androidx.core.view.ScrollingView;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
@@ -847,6 +849,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
 
                 final int y = (int) ev.getY(activePointerIndex);
                 int deltaY = mLastMotionY - y;
+
                 if (dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset,
                         ViewCompat.TYPE_TOUCH)) {
                     deltaY -= mScrollConsumed[1];
