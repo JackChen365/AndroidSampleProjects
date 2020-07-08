@@ -92,7 +92,7 @@ public class NestedParentLayout extends ViewGroup implements SimpleNestedScrolli
 
     @Override
     public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
-        Log.i(TAG,"onNestedPreScroll:"+dy);
+        boolean canScrollVertically = target.canScrollVertically(dy);
         int top = getTop();
         int targetTop = getViewTop(this, target);
         if(0 < dy && -top < targetTop){
@@ -115,6 +115,7 @@ public class NestedParentLayout extends ViewGroup implements SimpleNestedScrolli
                 }
             }
         }
+        Log.i(TAG,"onNestedPreScroll:"+dy+" canScrollVertically:"+canScrollVertically+" consumed:"+consumed[1]);
     }
 
     private int getViewTop(ViewGroup parentLayout,View childView) {

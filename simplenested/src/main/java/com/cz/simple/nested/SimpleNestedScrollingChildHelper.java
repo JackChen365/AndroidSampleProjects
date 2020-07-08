@@ -81,7 +81,6 @@ public class SimpleNestedScrollingChildHelper {
             return false;
         }
         if(isNestedScrollingEnabled()){
-
             if(0 != dx || 0 != dy){
                 int startX=0;
                 int startY=0;

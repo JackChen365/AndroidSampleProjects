@@ -24,6 +24,6 @@ public class NestedListSampleFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_nested_list_sample,container,false);
+        return inflater.inflate(R.layout.fragment_nested_scroll_list_sample,container,false);
     }
 }

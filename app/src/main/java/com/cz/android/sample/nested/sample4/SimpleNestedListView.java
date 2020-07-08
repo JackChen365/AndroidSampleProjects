@@ -18,7 +18,6 @@ import android.widget.OverScroller;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 
-import com.cz.android.sample.listview.SimpleListView;
 import com.cz.simple.nested.SimpleNestedScrollingChild;
 import com.cz.simple.nested.SimpleNestedScrollingChildHelper;
 
@@ -26,6 +25,7 @@ import java.util.LinkedList;
 
 public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrollingChild {
     private static final String TAG="SimpleRecyclerView";
+    private static final int NO_POSITION=-1;
     private static final int DIRECTION_START=-1;
     private static final int DIRECTION_END=1;
     private final SimpleNestedScrollingChildHelper nestedScrollingChildHelper;
@@ -233,26 +233,46 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
     }
 
     protected void scrollByInternal(int dx, int dy) {
+        scrollHorizontallyInternal(dx);
+        scrollVerticallyInternal(dy);
+    }
+
+    private int scrollHorizontallyInternal(int dx) {
         int consumedX=0;
         if (dx != 0) {
             consumedX = scrollHorizontallyBy(dx);
         }
+        if(0 != consumedX){
+            offsetChildrenLeftAndRight(-consumedX);
+        }
+        return consumedX;
+    }
+
+    private int scrollVerticallyInternal(int dy) {
         int consumedY=0;
         if (dy != 0) {
             consumedY = scrollVerticallyBy(dy);
         }
-        if(0 != consumedX||0 != consumedY){
-            offsetChildren(-consumedX,-consumedY);
+        if(0 != consumedY){
+            offsetChildrenTopAndBottom(-consumedY);
         }
+        return consumedY;
     }
 
-    private void offsetChildren(int consumedX, int consumedY) {
+    private void offsetChildrenLeftAndRight(int consumedX) {
         int childCount = getChildCount();
         for(int i=0;i<childCount;i++){
             View childView = getChildAt(i);
             if(0!=consumedX){
                 childView.offsetLeftAndRight(consumedX);
             }
+        }
+    }
+
+    private void offsetChildrenTopAndBottom(int consumedY) {
+        int childCount = getChildCount();
+        for(int i=0;i<childCount;i++){
+            View childView = getChildAt(i);
             if(0!=consumedY){
                 childView.offsetTopAndBottom(consumedY);
             }
@@ -327,7 +347,11 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
         requestLayout();
     }
 
-    protected void addAdapterView(View childView,int index){
+    public Adapter getAdapter() {
+        return adapter;
+    }
+
+    protected void addAdapterView(View childView, int index){
         SimpleNestedListView.LayoutParams layoutParams = (SimpleNestedListView.LayoutParams) childView.getLayoutParams();
         if(layoutParams.isCached){
             attachViewToParent(childView,index,layoutParams);
@@ -458,6 +482,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
             float dx = x - lastMotionX;
             float dy = y - lastMotionY;
             if (Math.abs(dx) > touchSlop||Math.abs(dy) > touchSlop) {
+                mNestedYOffset = 0;
                 isBeingDragged = true;
                 ViewParent parent = getParent();
                 if(null!=parent){
@@ -474,13 +499,14 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if (velocityTracker == null) {
-            velocityTracker = VelocityTracker.obtain();
-        }
-
-        velocityTracker.addMovement(ev);
         int action = ev.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            mNestedYOffset = 0;
+        }
+        MotionEvent vtev = MotionEvent.obtain(ev);
+        vtev.offsetLocation(0, mNestedYOffset);
         if(MotionEvent.ACTION_DOWN==action){
+            mNestedYOffset = 0;
             lastMotionX = ev.getX();
             lastMotionY = ev.getY();
             viewFlinger.abortAnimation();
@@ -494,7 +520,6 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
             float y = ev.getY();
             int dx = (int) (lastMotionX - x + 0.5f);
             int dy = (int) (lastMotionY - y + 0.5f);
-            Log.i(TAG,"onTouchEvent:"+dy+" y:"+y+" lastMotionY:"+lastMotionY);
 
             if(dispatchNestedPreScroll(dx,dy,mScrollConsumed,mScrollOffset,ViewCompat.TYPE_TOUCH)){
                 dx-=mScrollConsumed[0];
@@ -506,15 +531,21 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
                 isBeingDragged = true;
                 lastMotionX = x;
                 lastMotionY = y;
-
+                if (dy > 0) {
+                    dy -= touchSlop;
+                } else {
+                    dy += touchSlop;
+                }
                 ViewParent parent = getParent();
                 if(null!=parent){
                     parent.requestDisallowInterceptTouchEvent(true);
                 }
             }
             if (isBeingDragged) {
+                lastMotionX = x;
+                lastMotionY = y - mScrollOffset[1];
                 int oldY = getChildScrollY();
-                scrollBy(0,Math.round(dy));
+                scrollBy(0,dy);
                 invalidate();
 
                 final int scrolledDeltaY = getChildScrollY() - oldY;
@@ -523,27 +554,30 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
                 dispatchNestedScroll(0, scrolledDeltaY, 0, unconsumedY, mScrollOffset,
                         ViewCompat.TYPE_TOUCH, mScrollConsumed);
                 mNestedYOffset += mScrollOffset[1];
-                lastMotionX = x;
-                lastMotionY = y - mScrollOffset[1];
             }
         } else if(MotionEvent.ACTION_UP==action){
-//            if(null!=velocityTracker){
-//                velocityTracker.computeCurrentVelocity(1000,maximumVelocity);
-//                float xVelocity = velocityTracker.getXVelocity();
-//                float yVelocity = velocityTracker.getYVelocity();
-//                if(Math.abs(xVelocity)>minimumVelocity||Math.abs(yVelocity)>minimumVelocity){
-//                    if (!dispatchNestedPreFling(xVelocity, yVelocity)) {
-//                        dispatchNestedFling(-xVelocity, -yVelocity, true);
-//                        viewFlinger.fling(-xVelocity,-yVelocity);
-//                    }
-//                }
-//            }
+            if(null!=velocityTracker){
+                velocityTracker.computeCurrentVelocity(1000,maximumVelocity);
+                float xVelocity = velocityTracker.getXVelocity();
+                float yVelocity = velocityTracker.getYVelocity();
+                if(Math.abs(xVelocity)>minimumVelocity||Math.abs(yVelocity)>minimumVelocity){
+                    if (!dispatchNestedPreFling(-xVelocity, -yVelocity)) {
+                        dispatchNestedFling(-xVelocity, -yVelocity, true);
+                        viewFlinger.fling(-xVelocity,-yVelocity);
+                    }
+                }
+            }
             stopNestedScroll(ViewCompat.TYPE_TOUCH);
             releaseDrag();
         } else if(MotionEvent.ACTION_CANCEL==action){
             stopNestedScroll(ViewCompat.TYPE_TOUCH);
             releaseDrag();
         }
+        if (velocityTracker == null) {
+            velocityTracker = VelocityTracker.obtain();
+        }
+        velocityTracker.addMovement(vtev);
+        vtev.recycle();
         return true;
     }
 
@@ -573,8 +607,6 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
 
     public class ViewFlinger implements Runnable{
         private final OverScroller overScroller;
-        private int lastFlingX = 0;
-        private int lastFlingY = 0;
 
         public ViewFlinger(Context context) {
             overScroller=new OverScroller(context);
@@ -582,51 +614,38 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
 
         @Override
         public void run() {
-            if(!overScroller.isFinished()&&overScroller.computeScrollOffset()){
-                int currX = overScroller.getCurrX();
-                int currY = overScroller.getCurrY();
-                final int y = currX;
-                int unconsumed = y - lastFlingY;
-                lastFlingY = y;
-
-                // Nested Scrolling Pre Pass
-                mScrollConsumed[1] = 0;
-                dispatchNestedPreScroll(0, unconsumed, mScrollConsumed, null,
-                        ViewCompat.TYPE_NON_TOUCH);
-                unconsumed -= mScrollConsumed[1];
-                if (unconsumed != 0) {
-                    // Internal Scroll
-                    final int oldScrollY = getChildScrollY();
-                    int dx = currX - lastFlingX;
-                    int dy = currY - lastFlingY;
-                    scrollBy(dx,dy);
-                    invalidate();
-                    final int scrolledByMe = getChildScrollY() - oldScrollY;
-                    unconsumed -= scrolledByMe;
-
-                    // Nested Scrolling Post Pass
-                    mScrollConsumed[1] = 0;
-                    dispatchNestedScroll(0, scrolledByMe, 0, unconsumed, mScrollOffset,
-                            ViewCompat.TYPE_NON_TOUCH, mScrollConsumed);
-                    unconsumed -= mScrollConsumed[1];
-                }
-                lastFlingX = currX;
-                lastFlingY = currY;
-
-                if (unconsumed != 0) {
-                    overScroller.abortAnimation();
-                    stopNestedScroll(ViewCompat.TYPE_NON_TOUCH);
-                }
-
-                if (!overScroller.isFinished()) {
-                    ViewCompat.postInvalidateOnAnimation(SimpleNestedListView.this);
-                }
+            if (overScroller.isFinished()) {
+                return;
             }
+            overScroller.computeScrollOffset();
+            int currX = overScroller.getCurrX();
+            int currY = overScroller.getCurrY();
+            int unconsumed = (int) (currY-lastMotionY);
+            lastMotionX = currX;
+            lastMotionY = currY;
+            // Nested Scrolling Pre Pass
+            mScrollConsumed[1] = 0;
+            dispatchNestedPreScroll(0, unconsumed, mScrollConsumed, null, ViewCompat.TYPE_NON_TOUCH);
+            unconsumed -= mScrollConsumed[1];
+            if (unconsumed != 0) {
+                // Internal Scroll
+                int consumed = scrollVerticallyInternal(unconsumed);
+                unconsumed -= consumed;
+                // Nested Scrolling Post Pass
+                mScrollConsumed[1] = 0;
+                dispatchNestedScroll(0, consumed, 0, unconsumed, mScrollOffset,
+                        ViewCompat.TYPE_NON_TOUCH, mScrollConsumed);
+                unconsumed -= mScrollConsumed[1];
+                invalidate();
+            }
+            if (unconsumed != 0) {
+                overScroller.abortAnimation();
+                stopNestedScroll(ViewCompat.TYPE_NON_TOUCH);
+            }
+            postOnAnimation();
         }
 
         void startScroll(int startX,int startY,int dx,int dy) {
-            lastFlingX = startX;
-            lastFlingY = startY;
             overScroller.startScroll(startX, startY, dx, dy);
             if (Build.VERSION.SDK_INT < 23) {
                 // b/64931938 before API 23, startScroll() does not reset getCurX()/getCurY()
@@ -648,9 +667,19 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
         }
 
         void fling(float velocityX,float velocityY) {
-            lastFlingX = lastFlingY = 0;
             overScroller.fling(0, 0, (int)velocityX, (int)velocityY,
                     Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            runAnimatedScroll(true);
+        }
+
+        private void runAnimatedScroll(boolean participateInNestedScrolling) {
+            if (participateInNestedScrolling) {
+                startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL, ViewCompat.TYPE_NON_TOUCH);
+            } else {
+                stopNestedScroll(ViewCompat.TYPE_NON_TOUCH);
+            }
+            overScroller.computeScrollOffset();
+            lastMotionY = overScroller.getCurrY();
             postOnAnimation();
         }
 
@@ -730,6 +759,47 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
     //------------------------------------------------------------------
     //All about scroll.
     //------------------------------------------------------------------
+    @Nullable
+    View findOneVisibleChild(int fromIndex,int toIndex) {
+        int next=toIndex > fromIndex?1:-1;
+        int top = getPaddingTop();
+        int i = fromIndex;
+        while (i != toIndex) {
+            View child = getChildAt(i);
+            int childStart = child.getTop();
+            int childEnd = child.getBottom();
+            if (childStart<=top&&top<=childEnd) {
+                return child;
+            }
+            i += next;
+        }
+        return null;
+    }
+
+    public View findViewByPosition(int position) {
+        final int childCount = getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View child = getChildAt(i);
+            int childPosition = getPosition(child);
+            if (childPosition==position) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    public int findFirstVisibleItemPosition() {
+        int childCount = getChildCount();
+        View child = findOneVisibleChild(0, childCount);
+        return child == null ? NO_POSITION : getPosition(child);
+    }
+
+    public int findLastVisibleItemPosition() {
+        int childCount = getChildCount();
+        View child = findOneVisibleChild(childCount - 1, -1);
+        return child == null ? NO_POSITION : getPosition(child);
+    }
+
 
     @Override
     public boolean canScrollHorizontally(int direction) {
@@ -758,17 +828,50 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
 
     @Override
     protected int computeVerticalScrollRange() {
-        return super.computeVerticalScrollRange();
+        return computeScrollRange();
     }
 
     @Override
     protected int computeVerticalScrollOffset() {
-        return super.computeVerticalScrollOffset();
+        return computeScrollOffset();
     }
 
     @Override
     protected int computeVerticalScrollExtent() {
-        return super.computeVerticalScrollExtent();
+        return computeScrollExtent();
+    }
+
+    private int computeScrollOffset() {
+        if (getChildCount() == 0) {
+            return 0;
+        }
+        int firstVisibleItemPosition = findFirstVisibleItemPosition();
+        int lastVisibleItemPosition = findLastVisibleItemPosition();
+        View firstVisibleView = findViewByPosition(firstVisibleItemPosition);
+        View lastVisibleView = findViewByPosition(lastVisibleItemPosition);
+        return SimpleScrollbarHelper.computeScrollOffset(this,firstVisibleView,lastVisibleView);
+    }
+
+    private int computeScrollExtent() {
+        if (getChildCount() == 0) {
+            return 0;
+        }
+        int firstVisibleItemPosition = findFirstVisibleItemPosition();
+        int lastVisibleItemPosition = findLastVisibleItemPosition();
+        View firstVisibleView = findViewByPosition(firstVisibleItemPosition);
+        View lastVisibleView = findViewByPosition(lastVisibleItemPosition);
+        return SimpleScrollbarHelper.computeScrollOffset(this,firstVisibleView,lastVisibleView);
+    }
+
+    private int computeScrollRange() {
+        if (getChildCount() == 0) {
+            return 0;
+        }
+        int firstVisibleItemPosition = findFirstVisibleItemPosition();
+        int lastVisibleItemPosition = findLastVisibleItemPosition();
+        View firstVisibleView = findViewByPosition(firstVisibleItemPosition);
+        View lastVisibleView = findViewByPosition(lastVisibleItemPosition);
+        return SimpleScrollbarHelper.computeScrollRange(this,firstVisibleView,lastVisibleView);
     }
 
     //------------------------------------------------------------------

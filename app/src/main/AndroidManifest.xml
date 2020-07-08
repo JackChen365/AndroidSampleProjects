@@ -33,6 +33,9 @@
         <activity android:name=".animator.CloneAnimatorSampleActivity" />
         <activity android:name=".animator.AnimatorSetSampleActivity" />
         <activity android:name=".listview.SimpleListViewSampleActivity" />
+
+        <activity android:name=".text.TextViewSample1Activity"/>
+        <activity android:name=".text.TextViewSample2Activity"/>
     </application>
 
 </manifest>
