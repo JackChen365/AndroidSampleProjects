@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.cz.android.sample.listview.SimpleListView
+    <com.cz.android.sample.listview.sample1.SimpleListView
         android:id="@+id/listView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

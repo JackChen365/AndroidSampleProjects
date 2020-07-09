@@ -1,11 +1,8 @@
-package com.cz.android.sample.listview;
+package com.cz.android.sample.listview.sample1;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.os.Build;
-import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -16,7 +13,6 @@ import android.view.ViewParent;
 import android.widget.EdgeEffect;
 import android.widget.OverScroller;
 
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 
 import java.util.LinkedList;

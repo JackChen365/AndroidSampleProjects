@@ -1,7 +1,6 @@
-package com.cz.android.sample.listview;
+package com.cz.android.sample.listview.sample2.adapter;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,15 +8,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.cz.android.sample.R;
+import com.cz.android.sample.listview.sample1.SimpleListView;
+import com.cz.android.sample.listview.sample2.SimpleNestedListView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SampleAdapter extends SimpleListView.Adapter {
+public class HorizontalSampleAdapter extends SimpleNestedListView.Adapter {
     private static final String TAG="SampleAdapter";
     public final List<String> itemList=new ArrayList<>();
 
-    public SampleAdapter(List<String> itemList) {
+    public HorizontalSampleAdapter(List<String> itemList) {
         if(null!=itemList){
             this.itemList.addAll(itemList);
         }
@@ -32,7 +33,7 @@ public class SampleAdapter extends SimpleListView.Adapter {
     public View onCreateView(ViewGroup parent, int position) {
         Context context = parent.getContext();
         LayoutInflater layoutInflater = LayoutInflater.from(context);
-        return layoutInflater.inflate(R.layout.simple_text_item,parent,false);
+        return layoutInflater.inflate(R.layout.horizontal_simple_text_item,parent,false);
     }
 
     @Override

@@ -2,7 +2,6 @@ package com.cz.android.sample.nested.sample4;
 
 import android.content.Context;
 import android.os.Build;
-import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
@@ -481,7 +480,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
             float y = ev.getY();
             float dx = x - lastMotionX;
             float dy = y - lastMotionY;
-            if (Math.abs(dx) > touchSlop||Math.abs(dy) > touchSlop) {
+            if (Math.abs(dy) > touchSlop) {
                 mNestedYOffset = 0;
                 isBeingDragged = true;
                 ViewParent parent = getParent();
@@ -527,7 +526,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
                 mNestedYOffset += mScrollOffset[1];
             }
 
-            if (!isBeingDragged&&(Math.abs(dx) > touchSlop||Math.abs(dy) > touchSlop)) {
+            if (!isBeingDragged&&Math.abs(dy) > touchSlop) {
                 isBeingDragged = true;
                 lastMotionX = x;
                 lastMotionY = y;
@@ -753,10 +752,6 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
     }
 
     //------------------------------------------------------------------
-    //All about nested.
-    //------------------------------------------------------------------
-
-    //------------------------------------------------------------------
     //All about scroll.
     //------------------------------------------------------------------
     @Nullable
@@ -875,94 +870,8 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
     }
 
     //------------------------------------------------------------------
-    //All about save instance.
-    //------------------------------------------------------------------
-
-    @Override
-    public void setSaveEnabled(boolean enabled) {
-        super.setSaveEnabled(enabled);
-    }
-
-    @Nullable
-    @Override
-    protected Parcelable onSaveInstanceState() {
-        return super.onSaveInstanceState();
-    }
-
-    //------------------------------------------------------------------
-    //All about edge effect.
-    //------------------------------------------------------------------
-
-    private void ensureGlows() {
-        if (getOverScrollMode() != View.OVER_SCROLL_NEVER) {
-            if (mEdgeGlowTop == null) {
-                Context context = getContext();
-                mEdgeGlowTop = new EdgeEffect(context);
-                mEdgeGlowBottom = new EdgeEffect(context);
-            }
-        } else {
-            mEdgeGlowTop = null;
-            mEdgeGlowBottom = null;
-        }
-    }
-
-//    @Override
-//    public void draw(Canvas canvas) {
-//        super.draw(canvas);
-//        if (mEdgeGlowTop != null) {
-//            final int scrollY = getScrollY();
-//            if (!mEdgeGlowTop.isFinished()) {
-//                final int restoreCount = canvas.save();
-//                int width = getWidth();
-//                int height = getHeight();
-//                int xTranslation = 0;
-//                int yTranslation = Math.min(0, scrollY);
-//                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || getClipToPadding()) {
-//                    width -= getPaddingLeft() + getPaddingRight();
-//                    xTranslation += getPaddingLeft();
-//                }
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getClipToPadding()) {
-//                    height -= getPaddingTop() + getPaddingBottom();
-//                    yTranslation += getPaddingTop();
-//                }
-//                canvas.translate(xTranslation, yTranslation);
-//                mEdgeGlowTop.setSize(width, height);
-//                if (mEdgeGlowTop.draw(canvas)) {
-//                    ViewCompat.postInvalidateOnAnimation(this);
-//                }
-//                canvas.restoreToCount(restoreCount);
-//            }
-//            if (!mEdgeGlowBottom.isFinished()) {
-//                final int restoreCount = canvas.save();
-//                int width = getWidth();
-//                int height = getHeight();
-//                int xTranslation = 0;
-//                int yTranslation = Math.max(getScrollRange(), scrollY) + height;
-//                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || getClipToPadding()) {
-//                    width -= getPaddingLeft() + getPaddingRight();
-//                    xTranslation += getPaddingLeft();
-//                }
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getClipToPadding()) {
-//                    height -= getPaddingTop() + getPaddingBottom();
-//                    yTranslation -= getPaddingBottom();
-//                }
-//                canvas.translate(xTranslation - width, yTranslation);
-//                canvas.rotate(180, width, 0);
-//                mEdgeGlowBottom.setSize(width, height);
-//                if (mEdgeGlowBottom.draw(canvas)) {
-//                    ViewCompat.postInvalidateOnAnimation(this);
-//                }
-//                canvas.restoreToCount(restoreCount);
-//            }
-//        }
-//    }
-
-
-    //------------------------------------------------------------------
     //All about nested scroll.
     //------------------------------------------------------------------
-
-
     @Override
     public void setNestedScrollingEnabled(boolean enabled) {
         nestedScrollingChildHelper.setNestedScrollingEnabled(enabled);

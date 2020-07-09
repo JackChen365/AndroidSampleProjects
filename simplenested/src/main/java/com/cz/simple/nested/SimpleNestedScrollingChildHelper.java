@@ -51,17 +51,15 @@ public class SimpleNestedScrollingChildHelper {
         ViewParent parent = nestedScrollingChild.getParent();
         View child=nestedScrollingChild;
         if(isNestedScrollingEnabled()){
-            while(null!=parent){
+            while(null!=parent&&parent instanceof View){
                 if(parent instanceof SimpleNestedScrollingParent){
                     SimpleNestedScrollingParent nestedScrollingParent = (SimpleNestedScrollingParent) parent;
                     setNestedScrollingParent(nestedScrollingParent,type);
                     nestedScrollingParent.onNestedScrollAccepted(child,nestedScrollingChild,axes,type);
                     break;
                 }
-                if(parent instanceof View){
-                    child= (View) parent;
-                    parent= parent.getParent();
-                }
+                child= (View) parent;
+                parent= parent.getParent();
             }
         }
         return false;

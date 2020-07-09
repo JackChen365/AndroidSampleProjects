@@ -9,7 +9,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".nested.sample4.NestedScrollSample4Activity"></activity>
+        <activity android:name=".listview.sample2.SimpleNestedList2Activity"></activity>
+        <activity android:name=".nested.sample4.NestedScrollSample4Activity" />
         <activity android:name=".recycler.RecyclerViewRecyclerTestActivity" />
         <activity android:name=".nested.sample3.NestedScrollSample3Activity" />
         <activity android:name=".nested.sample2.NestedScrollSample2Activity" />
@@ -32,10 +33,9 @@
         <activity android:name=".animator.AnimatorEngineSampleActivity" />
         <activity android:name=".animator.CloneAnimatorSampleActivity" />
         <activity android:name=".animator.AnimatorSetSampleActivity" />
-        <activity android:name=".listview.SimpleListViewSampleActivity" />
-
-        <activity android:name=".text.TextViewSample1Activity"/>
-        <activity android:name=".text.TextViewSample2Activity"/>
+        <activity android:name=".listview.sample1.SimpleListViewSampleActivity" />
+        <activity android:name=".text.TextViewSample1Activity" />
+        <activity android:name=".text.TextViewSample2Activity" />
     </application>
 
 </manifest>
