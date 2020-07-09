@@ -19,8 +19,8 @@ class SimpleScrollbarHelper {
         final int minPosition = Math.min(listView.getPosition(startChild),
                 listView.getPosition(endChild));
         final int itemsBefore = Math.max(0, minPosition);
-        int firstChildStart =  orientationHelper.getStart(startChild);
-        int lastChildEnd = orientationHelper.getEnd(endChild);
+        int firstChildStart =  orientationHelper.getDecoratedStart(startChild);
+        int lastChildEnd = orientationHelper.getDecoratedEnd(endChild);
         final int laidOutArea = Math.abs(lastChildEnd - firstChildStart);
         final int itemRange = Math.abs(listView.getPosition(startChild) - listView.getPosition(endChild)) + 1;
         final float avgSizePerRow = (float) laidOutArea / itemRange;
@@ -36,8 +36,8 @@ class SimpleScrollbarHelper {
         if (listView.getChildCount() == 0 || startChild == null || endChild == null) {
             return 0;
         }
-        int firstChildStart =  orientationHelper.getStart(startChild);
-        int lastChildEnd = orientationHelper.getEnd(endChild);
+        int firstChildStart =  orientationHelper.getDecoratedStart(startChild);
+        int lastChildEnd = orientationHelper.getDecoratedEnd(endChild);
         int totalSpace = orientationHelper.getTotalSpace();
         final int extend = lastChildEnd - firstChildStart;
         return Math.min(totalSpace, extend);
@@ -52,8 +52,8 @@ class SimpleScrollbarHelper {
             return 0;
         }
         // smooth scrollbar enabled. try to estimate better.
-        int firstChildStart =  orientationHelper.getStart(startChild);
-        int lastChildEnd = orientationHelper.getEnd(endChild);
+        int firstChildStart =  orientationHelper.getDecoratedStart(startChild);
+        int lastChildEnd = orientationHelper.getDecoratedEnd(endChild);
         final int laidOutArea = lastChildEnd - firstChildStart;
         final int laidOutRange = Math.abs(listView.getPosition(startChild)
                 - listView.getPosition(endChild))

@@ -1,7 +1,6 @@
 package com.cz.android.sample.listview.sample2;
 
 import android.view.View;
-import android.view.ViewGroup;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -34,24 +33,24 @@ public abstract class OrientationHelper {
     /**
      * Returns the start of the view
      */
-    public abstract int getStart(View view);
+    public abstract int getDecoratedStart(View view);
 
     /**
      * Returns the start of the view in other direction.
-     * For example for a horizontal helper. Call the method {@link #getStart(View)} will return left.
+     * For example for a horizontal helper. Call the method {@link #getDecoratedStart(View)} will return left.
      * And calling this method will return top.
      */
-    public abstract int getStartInOther(View view);
+    public abstract int getDecoratedStartInOther(View view);
 
     /**
      * Returns the end of the view
      */
-    public abstract int getEnd(View view);
+    public abstract int getDecoratedEnd(View view);
 
     /**
      * Returns the end of the view in other direction.
      */
-    public abstract int getEndInOther(View view);
+    public abstract int getDecoratedEndInOther(View view);
 
     /**
      * Returns the total space without padding.
@@ -115,6 +114,16 @@ public abstract class OrientationHelper {
     public abstract int getEndInOther();
 
     /**
+     * @return The very first pixel we can draw.
+     */
+    public abstract int getStartAfterPadding();
+
+    /**
+     * @return The last pixel we can draw
+     */
+    public abstract int getEndAfterPadding();
+
+    /**
      * Returns the total space to layout.
      *
      * @return Total space to layout children
@@ -160,30 +169,6 @@ public abstract class OrientationHelper {
     public abstract int getEndPadding();
 
     public abstract int getEndPaddingInOther();
-
-    /**
-     * Returns the scroll value at the end of the layout. For horizontal helper, This value is same as scroll x.
-     * For the vertical helper, this value is same as the scroll y.
-     * @return
-     */
-    public abstract int getScroll();
-
-    public abstract int getScrollInOther();
-
-    /**
-     * Return a value only if you want use it horizontally. If current direction is vertical. It will return zero.
-     * @param value
-     * @return
-     */
-    public abstract int getValueHorizontally(int value);
-
-    /**
-     * Return a value only if you want use it vertically. If current direction is horizontal. It will return zero.
-     * Use this method to calculate to avoid check the direction.
-     * @param value
-     * @return
-     */
-    public abstract int getValueVertically(int value);
 
     /**
      * Creates an OrientationHelper for the given LayoutManager and orientation.
@@ -249,38 +234,38 @@ public abstract class OrientationHelper {
         }
 
         @Override
-        public int getStart(View view) {
+        public int getDecoratedStart(View view) {
             if(HORIZONTAL==orientation){
-                return horizontalHelper.getStart(view);
+                return horizontalHelper.getDecoratedStart(view);
             } else {
-                return verticalHelper.getStart(view);
+                return verticalHelper.getDecoratedStart(view);
             }
         }
 
         @Override
-        public int getStartInOther(View view) {
+        public int getDecoratedStartInOther(View view) {
             if(HORIZONTAL==orientation){
-                return horizontalHelper.getStartInOther(view);
+                return horizontalHelper.getDecoratedStartInOther(view);
             } else {
-                return verticalHelper.getStartInOther(view);
+                return verticalHelper.getDecoratedStartInOther(view);
             }
         }
 
         @Override
-        public int getEnd(View view) {
+        public int getDecoratedEnd(View view) {
             if(HORIZONTAL==orientation){
-                return horizontalHelper.getEnd(view);
+                return horizontalHelper.getDecoratedEnd(view);
             } else {
-                return verticalHelper.getEnd(view);
+                return verticalHelper.getDecoratedEnd(view);
             }
         }
 
         @Override
-        public int getEndInOther(View view) {
+        public int getDecoratedEndInOther(View view) {
             if(HORIZONTAL==orientation){
-                return horizontalHelper.getEndInOther(view);
+                return horizontalHelper.getDecoratedEndInOther(view);
             } else {
-                return verticalHelper.getEndInOther(view);
+                return verticalHelper.getDecoratedEndInOther(view);
             }
         }
 
@@ -375,6 +360,24 @@ public abstract class OrientationHelper {
         }
 
         @Override
+        public int getStartAfterPadding() {
+            if(HORIZONTAL==orientation){
+                return horizontalHelper.getStartAfterPadding();
+            } else {
+                return verticalHelper.getStartAfterPadding();
+            }
+        }
+
+        @Override
+        public int getEndAfterPadding() {
+            if(HORIZONTAL==orientation){
+                return horizontalHelper.getEndAfterPadding();
+            } else {
+                return verticalHelper.getEndAfterPadding();
+            }
+        }
+
+        @Override
         public int getMeasurement() {
             if(HORIZONTAL==orientation){
                 return horizontalHelper.getMeasurement();
@@ -445,42 +448,6 @@ public abstract class OrientationHelper {
                 return verticalHelper.getEndPaddingInOther();
             }
         }
-
-        @Override
-        public int getScroll() {
-            if(HORIZONTAL==orientation){
-                return horizontalHelper.getScroll();
-            } else {
-                return verticalHelper.getScroll();
-            }
-        }
-
-        @Override
-        public int getScrollInOther() {
-            if(HORIZONTAL==orientation){
-                return horizontalHelper.getScrollInOther();
-            } else {
-                return verticalHelper.getScrollInOther();
-            }
-        }
-
-        @Override
-        public int getValueHorizontally(int value) {
-            if(HORIZONTAL==orientation){
-                return horizontalHelper.getValueHorizontally(value);
-            } else {
-                return verticalHelper.getValueHorizontally(value);
-            }
-        }
-
-        @Override
-        public int getValueVertically(int value) {
-            if(HORIZONTAL==orientation){
-                return horizontalHelper.getValueVertically(value);
-            } else {
-                return verticalHelper.getValueVertically(value);
-            }
-        }
     }
 
     /**
@@ -508,23 +475,23 @@ public abstract class OrientationHelper {
             }
 
             @Override
-            public int getStart(View view) {
-                return view.getLeft();
+            public int getDecoratedStart(View view) {
+                return layout.getDecoratedLeft(view);
             }
 
             @Override
-            public int getStartInOther(View view) {
-                return view.getTop();
+            public int getDecoratedStartInOther(View view) {
+                return layout.getDecoratedTop(view);
             }
 
             @Override
-            public int getEnd(View view) {
-                return view.getRight();
+            public int getDecoratedEnd(View view) {
+                return layout.getDecoratedRight(view);
             }
 
             @Override
-            public int getEndInOther(View view) {
-                return view.getBottom();
+            public int getDecoratedEndInOther(View view) {
+                return layout.getDecoratedBottom(view);
             }
 
             @Override
@@ -578,6 +545,16 @@ public abstract class OrientationHelper {
             }
 
             @Override
+            public int getStartAfterPadding() {
+                return layout.getPaddingLeft();
+            }
+
+            @Override
+            public int getEndAfterPadding() {
+                return layout.getMeasuredWidth()-layout.getPaddingRight();
+            }
+
+            @Override
             public int getMeasurement() {
                 return layout.getWidth();
             }
@@ -615,26 +592,6 @@ public abstract class OrientationHelper {
             @Override
             public int getEndPaddingInOther() {
                 return layout.getPaddingBottom();
-            }
-
-            @Override
-            public int getScroll() {
-                return layout.getScrollX();
-            }
-
-            @Override
-            public int getScrollInOther() {
-                return layout.getScrollY();
-            }
-
-            @Override
-            public int getValueHorizontally(int value) {
-                return value;
-            }
-
-            @Override
-            public int getValueVertically(int value) {
-                return 0;
             }
         };
     }
@@ -664,23 +621,23 @@ public abstract class OrientationHelper {
             }
 
             @Override
-            public int getStart(View view) {
-                return view.getTop();
+            public int getDecoratedStart(View view) {
+                return layout.getDecoratedTop(view);
             }
 
             @Override
-            public int getStartInOther(View view) {
-                return view.getLeft();
+            public int getDecoratedStartInOther(View view) {
+                return layout.getDecoratedLeft(view);
             }
 
             @Override
-            public int getEnd(View view) {
-                return view.getBottom();
+            public int getDecoratedEnd(View view) {
+                return layout.getDecoratedBottom(view);
             }
 
             @Override
-            public int getEndInOther(View view) {
-                return view.getRight();
+            public int getDecoratedEndInOther(View view) {
+                return layout.getDecoratedRight(view);
             }
 
             @Override
@@ -734,6 +691,16 @@ public abstract class OrientationHelper {
             }
 
             @Override
+            public int getStartAfterPadding() {
+                return layout.getPaddingTop();
+            }
+
+            @Override
+            public int getEndAfterPadding() {
+                return layout.getMeasuredHeight()-layout.getPaddingBottom();
+            }
+
+            @Override
             public int getMeasurement() {
                 return layout.getHeight();
             }
@@ -771,26 +738,6 @@ public abstract class OrientationHelper {
             @Override
             public int getEndPaddingInOther() {
                 return layout.getPaddingRight();
-            }
-
-            @Override
-            public int getScroll() {
-                return layout.getScrollY();
-            }
-
-            @Override
-            public int getScrollInOther() {
-                return layout.getScrollX();
-            }
-
-            @Override
-            public int getValueHorizontally(int value) {
-                return 0;
-            }
-
-            @Override
-            public int getValueVertically(int value) {
-                return value;
             }
         };
     }

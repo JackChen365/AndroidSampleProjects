@@ -29,7 +29,7 @@ import androidx.recyclerview.widget.RecyclerView;
  */
 public class SimpleLinearLayoutManager extends RecyclerView.LayoutManager {
     private static final String TAG = "LinearLayoutManager";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     public static final int HORIZONTAL = LinearLayout.HORIZONTAL;
     public static final int VERTICAL = LinearLayout.VERTICAL;
     /**
@@ -330,6 +330,7 @@ public class SimpleLinearLayoutManager extends RecyclerView.LayoutManager {
         if (canUseExistingSpace) {
             mRenderState.mAvailable -= fastScrollSpace;
         }
+        Log.i(TAG,"updateRenderState:"+fastScrollSpace);
         mRenderState.mScrollingOffset = fastScrollSpace;
     }
     private int scrollBy(int dy, RecyclerView.Recycler recycler, RecyclerView.State state) {
@@ -396,6 +397,7 @@ public class SimpleLinearLayoutManager extends RecyclerView.LayoutManager {
             return;
         }
         final int limit = mOrientationHelper.getStartAfterPadding() + dt;
+        Log.i(TAG,"recycleViewsFromStart:"+dt);
         final int childCount = getChildCount();
         if (mShouldReverseLayout) {
             for (int i = childCount - 1; i >= 0; i--) {

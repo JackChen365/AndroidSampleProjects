@@ -33,15 +33,17 @@ public class DividerItemDecoration extends SimpleNestedListView.ItemDecoration {
                 int paddingBottom = parent.getPaddingBottom();
                 int height = parent.getHeight();
                 int right = childView.getRight();
-                paint.setStrokeWidth(outRect.right);
-                c.drawLine(right,paddingTop,right+outRect.right,height-paddingBottom,paint);
+                int strokeWidth = outRect.right;
+                paint.setStrokeWidth(strokeWidth);
+                c.drawLine(right+strokeWidth/2,paddingTop,right+strokeWidth/2,height+paddingBottom/2,paint);
             } else if(SimpleNestedListView.VERTICAL==orientation){
                 int paddingLeft = parent.getPaddingLeft();
                 int paddingRight = parent.getPaddingRight();
                 int width = parent.getWidth();
                 int bottom = childView.getBottom();
+                int strokeWidth = outRect.bottom;
                 paint.setStrokeWidth(outRect.bottom);
-                c.drawLine(paddingLeft,bottom,width-paddingRight,bottom+outRect.bottom,paint);
+                c.drawLine(paddingLeft,bottom+strokeWidth/2,width-paddingRight,bottom+strokeWidth/2,paint);
             }
         }
     }
@@ -56,9 +58,9 @@ public class DividerItemDecoration extends SimpleNestedListView.ItemDecoration {
         super.getItemOffsets(outRect,itemPosition, parent);
         int orientation = parent.getOrientation();
         if(SimpleNestedListView.HORIZONTAL==orientation){
-            outRect.set(0,0,20,0);
+            outRect.set(0,0,40,0);
         } else if(SimpleNestedListView.VERTICAL==orientation){
-            outRect.set(0,0,0,20);
+            outRect.set(0,0,0,40);
         }
 
     }

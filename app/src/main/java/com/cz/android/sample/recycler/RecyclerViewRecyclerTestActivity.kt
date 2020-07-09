@@ -19,13 +19,13 @@ class RecyclerViewRecyclerTestActivity : AppCompatActivity() {
         setContentView(R.layout.activity_reccyler_view_recycer_test)
 
         val dataProvider = DataManager.getDataProvider(this)
-        recyclerView.layoutManager=SimpleLinearLayoutManager(this)
+        recyclerView.layoutManager=SimpleLinearLayoutManager(this,SimpleLinearLayoutManager.HORIZONTAL,false)
         recyclerView.addItemDecoration(object : RecyclerView.ItemDecoration() {
             override fun onDrawOver(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
                 super.onDrawOver(c, parent, state)
                 Log.i("onDrawOver","childCount:"+parent.childCount)
             }
         })
-        recyclerView.adapter=SimpleArrayAdapter(this,dataProvider.wordList)
+        recyclerView.adapter=HorizontalSampleAdapter(dataProvider.getWordList(100))
     }
 }
