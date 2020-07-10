@@ -1,4 +1,4 @@
-package com.cz.android.sample.listview.sample2;
+package com.cz.android.sample.listview.list2;
 
 import android.view.View;
 

@@ -350,38 +350,6 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager {
         return scrollBy(dy, adapter, recycler);
     }
 
-    private void updateRenderState(int layoutDirection, int requiredSpace,
-            boolean canUseExistingSpace) {
-        mRenderState.mLayoutDirection = layoutDirection;
-        int fastScrollSpace;
-        if (layoutDirection == RenderState.LAYOUT_END) {
-            // get the first child in the direction we are going
-            final View child = getChildClosestToEnd();
-            // the direction in which we are traversing children
-            mRenderState.mItemDirection = mShouldReverseLayout ? RenderState.ITEM_DIRECTION_HEAD
-                    : RenderState.ITEM_DIRECTION_TAIL;
-            mRenderState.mCurrentPosition = getPosition(child) + mRenderState.mItemDirection;
-            mRenderState.mOffset = mOrientationHelper.getDecoratedEnd(child);
-            // calculate how much we can scroll without adding new children (independent of layout)
-            fastScrollSpace = mOrientationHelper.getDecoratedEnd(child)
-                    - mOrientationHelper.getEndAfterPadding();
-
-        } else {
-            final View child = getChildClosestToStart();
-            mRenderState.mItemDirection = mShouldReverseLayout ? RenderState.ITEM_DIRECTION_TAIL
-                    : RenderState.ITEM_DIRECTION_HEAD;
-            mRenderState.mCurrentPosition = getPosition(child) + mRenderState.mItemDirection;
-            mRenderState.mOffset = mOrientationHelper.getDecoratedStart(child);
-            fastScrollSpace = -mOrientationHelper.getDecoratedStart(child)
-                    + mOrientationHelper.getStartAfterPadding();
-        }
-        mRenderState.mAvailable = requiredSpace;
-        if (canUseExistingSpace) {
-            mRenderState.mAvailable -= fastScrollSpace;
-        }
-        mRenderState.mScrollingOffset = fastScrollSpace;
-    }
-
     private int scrollBy(int dy, RecyclerView.Adapter adapter, RecyclerView.Recycler recycler) {
         if (getChildCount() == 0 || dy == 0) {
             return 0;
@@ -449,6 +417,7 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager {
         }
         final int limit = mOrientationHelper.getStartAfterPadding() + dt;
         final int childCount = getChildCount();
+        Log.i(TAG,"recycleViewsFromStart:"+limit);
         if (mShouldReverseLayout) {
             for (int i = childCount - 1; i >= 0; i--) {
                 View child = getChildAt(i);
@@ -525,6 +494,40 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager {
         } else {
             recycleViewsFromStart(recycler, renderState.mScrollingOffset);
         }
+    }
+
+
+    private void updateRenderState(int layoutDirection, int requiredSpace,
+                                   boolean canUseExistingSpace) {
+        mRenderState.mLayoutDirection = layoutDirection;
+        int fastScrollSpace;
+        if (layoutDirection == RenderState.LAYOUT_END) {
+            // get the first child in the direction we are going
+            final View child = getChildClosestToEnd();
+            // the direction in which we are traversing children
+            mRenderState.mItemDirection = mShouldReverseLayout ? RenderState.ITEM_DIRECTION_HEAD
+                    : RenderState.ITEM_DIRECTION_TAIL;
+            mRenderState.mCurrentPosition = getPosition(child) + mRenderState.mItemDirection;
+            mRenderState.mOffset = mOrientationHelper.getDecoratedEnd(child);
+            // calculate how much we can scroll without adding new children (independent of layout)
+            fastScrollSpace = mOrientationHelper.getDecoratedEnd(child)
+                    - mOrientationHelper.getEndAfterPadding();
+
+        } else {
+            final View child = getChildClosestToStart();
+            mRenderState.mItemDirection = mShouldReverseLayout ? RenderState.ITEM_DIRECTION_TAIL
+                    : RenderState.ITEM_DIRECTION_HEAD;
+            mRenderState.mCurrentPosition = getPosition(child) + mRenderState.mItemDirection;
+            mRenderState.mOffset = mOrientationHelper.getDecoratedStart(child);
+            fastScrollSpace = -mOrientationHelper.getDecoratedStart(child)
+                    + mOrientationHelper.getStartAfterPadding();
+        }
+        mRenderState.mAvailable = requiredSpace;
+        if (canUseExistingSpace) {
+            mRenderState.mAvailable -= fastScrollSpace;
+        }
+        mRenderState.mScrollingOffset = fastScrollSpace;
+        Log.i(TAG,"mAvailable:"+mRenderState.mAvailable+" mScrollingOffset:"+mRenderState.mScrollingOffset+" requiredSpace:"+requiredSpace);
     }
 
     /**
@@ -607,6 +610,7 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager {
                 if (renderState.mAvailable < 0) {
                     renderState.mScrollingOffset += renderState.mAvailable;
                 }
+                Log.i(TAG,"fill:"+mRenderState.mAvailable+" mScrollingOffset:"+mRenderState.mScrollingOffset);
                 recycleByRenderState(recycler, renderState);
             }
 

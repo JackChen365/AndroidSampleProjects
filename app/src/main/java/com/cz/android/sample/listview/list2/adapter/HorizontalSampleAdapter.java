@@ -1,4 +1,4 @@
-package com.cz.android.sample.listview.sample2.adapter;
+package com.cz.android.sample.listview.list2.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,8 +8,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.cz.android.sample.R;
-import com.cz.android.sample.listview.sample1.SimpleListView;
-import com.cz.android.sample.listview.sample2.SimpleNestedListView;
+import com.cz.android.sample.listview.list2.SimpleNestedListView;
 
 import java.util.ArrayList;
 import java.util.List;

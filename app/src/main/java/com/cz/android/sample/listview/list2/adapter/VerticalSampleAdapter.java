@@ -1,4 +1,4 @@
-package com.cz.android.sample.listview.sample1;
+package com.cz.android.sample.listview.list2.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,15 +8,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.cz.android.sample.R;
+import com.cz.android.sample.listview.list2.SimpleNestedListView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SampleAdapter extends SimpleListView.Adapter {
+public class VerticalSampleAdapter extends SimpleNestedListView.Adapter {
     private static final String TAG="SampleAdapter";
     public final List<String> itemList=new ArrayList<>();
 
-    public SampleAdapter(List<String> itemList) {
+    public VerticalSampleAdapter(List<String> itemList) {
         if(null!=itemList){
             this.itemList.addAll(itemList);
         }

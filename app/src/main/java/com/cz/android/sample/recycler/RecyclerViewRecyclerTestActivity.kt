@@ -27,5 +27,10 @@ class RecyclerViewRecyclerTestActivity : AppCompatActivity() {
             }
         })
         recyclerView.adapter=HorizontalSampleAdapter(dataProvider.getWordList(100))
+
+
+        scrollButton.setOnClickListener {
+            recyclerView.scrollBy(500,0)
+        }
     }
 }

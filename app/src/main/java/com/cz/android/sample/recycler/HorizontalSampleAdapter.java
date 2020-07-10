@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.cz.android.sample.R;
-import com.cz.android.sample.listview.sample2.SimpleNestedListView;
 
 import java.util.ArrayList;
 import java.util.List;

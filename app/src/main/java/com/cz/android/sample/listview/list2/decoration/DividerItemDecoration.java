@@ -1,12 +1,14 @@
-package com.cz.android.sample.listview.sample2.decoration;
+package com.cz.android.sample.listview.list2.decoration;
 
+import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.View;
 
-import com.cz.android.sample.listview.sample2.SimpleNestedListView;
+import com.cz.android.sample.R;
+import com.cz.android.sample.listview.list2.SimpleNestedListView;
 
 /**
  * @author Created by cz
@@ -16,8 +18,9 @@ import com.cz.android.sample.listview.sample2.SimpleNestedListView;
 public class DividerItemDecoration extends SimpleNestedListView.ItemDecoration {
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    public DividerItemDecoration() {
-        paint.setColor(Color.RED);
+    public DividerItemDecoration(Context context) {
+        paint.setColor(Color.GRAY);
+        paint.setStrokeWidth(context.getResources().getDimension(R.dimen.sample_divide));
     }
 
     @Override
@@ -57,10 +60,11 @@ public class DividerItemDecoration extends SimpleNestedListView.ItemDecoration {
     public void getItemOffsets(Rect outRect, int itemPosition, SimpleNestedListView parent) {
         super.getItemOffsets(outRect,itemPosition, parent);
         int orientation = parent.getOrientation();
+        int strokeWidth = (int) paint.getStrokeWidth();
         if(SimpleNestedListView.HORIZONTAL==orientation){
-            outRect.set(0,0,40,0);
+            outRect.set(0,0,strokeWidth,0);
         } else if(SimpleNestedListView.VERTICAL==orientation){
-            outRect.set(0,0,0,40);
+            outRect.set(0,0,0,strokeWidth);
         }
 
     }

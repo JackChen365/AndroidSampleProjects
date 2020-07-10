@@ -1,11 +1,10 @@
-package com.cz.android.sample.listview.sample1
+package com.cz.android.sample.listview.list1
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.cz.android.sample.R
 import com.cz.android.sample.api.Register
 import com.cz.android.sample.library.data.DataManager
-import com.cz.android.sample.listview.sample1.SampleAdapter
 import kotlinx.android.synthetic.main.activity_sample_list_view.*
 
 @Register(title = "SimpleListView1", desc = "演示最基本的控件列表数据复用")

@@ -1,4 +1,4 @@
-package com.cz.android.sample.listview.sample2;
+package com.cz.android.sample.listview.list2;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -18,6 +18,7 @@ import android.widget.EdgeEffect;
 import android.widget.LinearLayout;
 import android.widget.OverScroller;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 
@@ -139,11 +140,44 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
         layoutState.itemDirection=DIRECTION_END;
         layoutState.position=0;
         layoutState.layoutOffset = 0;
+        layoutState.scrollingOffset = Integer.MIN_VALUE;
+    }
+
+    private int updateLayoutState(int requiredSpace,int itemDirection) {
+        int scrollingOffset=0;
+        int childCount = getChildCount();
+        if(0 == requiredSpace||0 == childCount) return scrollingOffset;
+        if(itemDirection == DIRECTION_START){
+            View childView = getChildAt(0);
+            LayoutParams layoutParams = (LayoutParams) childView.getLayoutParams();
+            layoutState.position=layoutParams.position+itemDirection;
+            layoutState.itemDirection=itemDirection;
+            int childStart = orientationHelper.getDecoratedStart(childView);
+            layoutState.layoutOffset =childStart;
+            scrollingOffset=-childStart+orientationHelper.getStartAfterPadding();
+        } else if(itemDirection == DIRECTION_END){
+            View childView = getChildAt(childCount - 1);
+            int endAfterPadding = orientationHelper.getEndAfterPadding();
+            LayoutParams layoutParams = (LayoutParams) childView.getLayoutParams();
+            layoutState.position=layoutParams.position+itemDirection;
+            layoutState.itemDirection=itemDirection;
+            int childEnd = orientationHelper.getDecoratedEnd(childView);
+            layoutState.layoutOffset = childEnd;
+            scrollingOffset=childEnd-endAfterPadding;
+        }
+        layoutState.available=requiredSpace-scrollingOffset;
+        layoutState.scrollingOffset = scrollingOffset;
+        Log.i(TAG,"mAvailable:"+layoutState.available+" mScrollingOffset:"+layoutState.scrollingOffset+" requiredSpace:"+requiredSpace);
+        return scrollingOffset;
     }
 
     private void fillAndRecyclerLayout() {
         int available = layoutState.available;
+        if(0 > layoutState.available){
+            layoutState.scrollingOffset +=layoutState.available;
+        }
         recyclerList(layoutState);
+        Log.i(TAG,"fillAndRecyclerLayout:"+layoutState.available+" mScrollingOffset:"+layoutState.scrollingOffset);
         while(0 < available&&hasMore()){
             int position = layoutState.position;
             int viewType = adapter.getViewType(position);
@@ -158,11 +192,16 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
                 layoutState.layoutOffset +=consumed;
                 addAdapterView(view,-1);
             }
-            //Check if we need to recycler view that out of the screen.
-            recyclerList(layoutState);
             available-=consumed;
             layoutState.position+=layoutState.itemDirection;
             layoutState.available-=consumed;
+            //Check if we need to recycler view that out of the screen.
+            layoutState.scrollingOffset +=consumed;
+            if(0 > layoutState.available){
+                layoutState.scrollingOffset +=layoutState.available;
+            }
+            Log.i(TAG,"fill:"+layoutState.available+" mScrollingOffset:"+layoutState.scrollingOffset);
+            recyclerList(layoutState);
         }
     }
 
@@ -205,71 +244,64 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
 
     private void recyclerList(LayoutState layoutState) {
         if(layoutState.itemDirection==DIRECTION_END){
-            recycleFromStart();
+            recycleFromStart(layoutState.scrollingOffset);
         } else if(layoutState.itemDirection==DIRECTION_START){
-            recycleFromEnd();
+            recycleFromEnd(layoutState.scrollingOffset);
         }
     }
 
-    private void recycleFromStart() {
+    private void recycleFromStart(int dt) {
         int childCount = getChildCount();
         if(0 < childCount){
-            int index=0;
-            int end = orientationHelper.getEndAfterPadding();
-            int scrollingOffset = layoutState.layoutOffset;
-            int baseline=scrollingOffset-end;
+            int limit=orientationHelper.getStartAfterPadding()+dt;
+            Log.i(TAG,"recycleFromStart:"+" dt:"+dt+" limit:"+limit);
             for(int i=0;i<childCount;i++){
                 View childView = getChildAt(i);
-                int childStart = orientationHelper.getDecoratedStart(childView);
                 int childEnd = orientationHelper.getDecoratedEnd(childView);
-                if(childStart < baseline && childEnd >= baseline){
-                    index = i;
-                    Log.i(TAG,"recycleFromStart:"+childStart+" childEnd:"+childEnd+" baseline:"+baseline+" index:"+index);
+                if(childEnd > limit){
+                    Log.i(TAG,"recycleFromStart:"+" dt:"+dt+" limit:"+limit+" i:"+i+" childEnd:"+childEnd+" childCount:"+childCount);
+                    recyclerChild(0,i);
                     break;
                 }
             }
-            if(0 < index){
-                recyclerChild(0,index);
-            }
         }
     }
 
-    private void recycleFromEnd() {
+    private void recycleFromEnd(int dt) {
         int childCount = getChildCount();
         if(0 < childCount){
-            int index=childCount;
-            int end = orientationHelper.getEndAfterPadding();
-            int scrollingOffset = layoutState.layoutOffset;
-            int start=scrollingOffset+end;
+            final int limit = orientationHelper.getEndAfterPadding() - dt;
+            Log.i(TAG,"recycleFromEnd:"+dt+" limit:"+limit);
             for(int i=childCount-1;i>=0;i--){
                 View childView = getChildAt(i);
                 int childStart = orientationHelper.getDecoratedStart(childView);
-                int childEnd = orientationHelper.getDecoratedEnd(childView);
-                if(childStart <= start && childEnd > start){
-                    index=i+1;
-                    Log.i(TAG,"recycleFromEnd:"+childStart+" childEnd:"+childEnd+" index:"+index);
+                if(childStart < limit){
+                    recyclerChild(childCount - 1, i);
+                    Log.i(TAG,"recycleFromEnd:"+childStart+" limit:"+limit+" i:"+(i)+" childCount:"+childCount);
                     break;
                 }
-            }
-            if(index < childCount){
-                recyclerChild(index,childCount);
             }
         }
     }
 
     private void recyclerChild(int start, int end) {
-        int index=start;
-        while(index<end){
-            View childView = getChildAt(start);
-            if(null!=childView){
-                int i = indexOfChild(childView);
-                onRecycleChild(childView);
-                removeAdapterView(childView);
-                recyclerBin.addScarpView(childView);
-                Log.i(TAG,"recyclerChild:"+i);
-            }
-            index++;
+        if (start == end) {
+            return;
         }
+        if (end > start) {
+            for (int i = end - 1; i >= start; i--) {
+                removeAndRecycleViewAt(i);
+            }
+        } else {
+            for (int i = start; i > end; i--) {
+                removeAndRecycleViewAt(i);
+            }
+        }
+    }
+
+    private void removeAndRecycleViewAt(int index) {
+        final View view = getChildAt(index);
+        recyclerBin.recycleView(view);
     }
 
     protected void onRecycleChild(View childView) {
@@ -370,18 +402,20 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
     }
 
     private int scrollHorizontallyBy(int dx) {
-        int scrollingOffset = updateLayoutState(dx);
-        fillAndRecyclerLayout();
+        int absDx = Math.abs(dx);
         int layoutDirection=(0 < dx) ? DIRECTION_END : DIRECTION_START;
-        int consumed = Math.abs(dx) > scrollingOffset ? overScroll(layoutDirection,scrollingOffset,dx) : dx;
+        int scrollingOffset = updateLayoutState(absDx,layoutDirection);
+        fillAndRecyclerLayout();
+        int consumed = absDx > scrollingOffset ? overScroll(layoutDirection,scrollingOffset,dx) : dx;
         return consumed;
     }
 
     private int scrollVerticallyBy(int dy) {
-        int scrollingOffset = updateLayoutState(dy);
-        fillAndRecyclerLayout();
+        int absDy = Math.abs(dy);
         int layoutDirection=(0 < dy) ? DIRECTION_END : DIRECTION_START;
-        int consumed = Math.abs(dy) > scrollingOffset ? overScroll(layoutDirection,scrollingOffset,dy) : dy;
+        int scrollingOffset = updateLayoutState(absDy,layoutDirection);
+        fillAndRecyclerLayout();
+        int consumed = absDy > scrollingOffset ? overScroll(layoutDirection,scrollingOffset,dy) : dy;
         return consumed;
     }
 
@@ -406,35 +440,6 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
         }
         return delta;
     }
-
-    private int updateLayoutState(int diff) {
-        int offset=0;
-        int childCount = getChildCount();
-        if(0 == diff||0 == childCount) return offset;
-        int itemDirection=(0 < diff) ? DIRECTION_END : DIRECTION_START;
-        if(itemDirection == DIRECTION_START){
-            View childView = getChildAt(0);
-            LayoutParams layoutParams = (LayoutParams) childView.getLayoutParams();
-            layoutState.position=layoutParams.position+itemDirection;
-            layoutState.itemDirection=itemDirection;
-            int childStart = orientationHelper.getDecoratedStart(childView);
-            layoutState.layoutOffset =childStart;
-            layoutState.available=childStart-diff;
-            offset=-childStart+orientationHelper.getStartPadding();
-        } else if(itemDirection == DIRECTION_END){
-            View childView = getChildAt(childCount - 1);
-            int totalSpace = orientationHelper.getTotalSpace();
-            LayoutParams layoutParams = (LayoutParams) childView.getLayoutParams();
-            layoutState.position=layoutParams.position+itemDirection;
-            layoutState.itemDirection=itemDirection;
-            int childEnd = orientationHelper.getDecoratedEnd(childView);
-            layoutState.layoutOffset = childEnd;
-            offset=childEnd-totalSpace;
-            layoutState.available=(totalSpace-layoutState.layoutOffset)+diff;
-        }
-        return offset;
-    }
-
 
     public void setAdapter(Adapter adapter){
         this.adapter=adapter;
@@ -482,7 +487,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
         private int widthMode, heightMode;
         private int width, height;
 
-        void addScarpView(View view){
+        void recycleView(View view){
             removeAdapterView(view);
             LayoutParams layoutParams = (LayoutParams) view.getLayoutParams();
             layoutParams.insetsDirty=true;
@@ -498,7 +503,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
         void detachAndScrapAttachedViews(){
             while(0<getChildCount()){
                 View childView = getChildAt(0);
-                addScarpView(childView);
+                recycleView(childView);
             }
         }
 
@@ -854,6 +859,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
 
     public class LayoutState{
         int itemDirection=DIRECTION_END;
+        int scrollingOffset =0;
         int layoutOffset =0;
         int available=0;
         int position;
@@ -1429,7 +1435,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
          * @param c Canvas to draw into
          * @param parent RecyclerView this ItemDecoration is drawing into
          */
-        public void onDraw(Canvas c, SimpleNestedListView parent) {
+        public void onDraw(@NonNull Canvas c,@NonNull SimpleNestedListView parent) {
         }
 
         /**
@@ -1440,7 +1446,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
          * @param c Canvas to draw into
          * @param parent RecyclerView this ItemDecoration is drawing into
          */
-        public void onDrawOver(Canvas c, SimpleNestedListView parent) {
+        public void onDrawOver(@NonNull Canvas c,@NonNull SimpleNestedListView parent) {
         }
 
         /**
@@ -1456,7 +1462,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
          * @param itemPosition Adapter position of the item to offset
          * @param parent RecyclerView this ItemDecoration is decorating
          */
-        public void getItemOffsets(Rect outRect, int itemPosition, SimpleNestedListView parent) {
+        public void getItemOffsets(@NonNull Rect outRect, int itemPosition,@NonNull SimpleNestedListView parent) {
             outRect.set(0, 0, 0, 0);
         }
     }

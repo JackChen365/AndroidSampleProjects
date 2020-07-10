@@ -3,12 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:paddingTop="100dp"
+    android:paddingBottom="100dp"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:background="@color/md_black_1000">
 
-    <com.cz.android.sample.listview.sample2.SimpleNestedListView
+    <com.cz.android.sample.listview.list2.SimpleNestedListView
         android:id="@+id/nestedListView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
 
     <com.cz.android.sample.library.view.RadioLayout
@@ -20,5 +25,15 @@
         android:orientation="vertical"
         app:radio_items="@array/orientation"
         />
+
+    <Button
+        android:id="@+id/scrollButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|bottom"
+        android:layout_marginRight="12dp"
+        android:layout_marginBottom="100dp"
+        android:text="Scroll"
+        android:textAllCaps="false"/>
 
 </FrameLayout>
