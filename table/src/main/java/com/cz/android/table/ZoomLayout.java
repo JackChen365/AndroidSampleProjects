@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.VelocityTracker;
@@ -21,6 +22,9 @@ import android.widget.OverScroller;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.Px;
+import androidx.core.view.NestedScrollingChild2;
+import androidx.core.view.NestedScrollingChild3;
+import androidx.core.view.NestedScrollingChildHelper;
 import androidx.core.view.ViewCompat;
 
 /**
@@ -36,7 +40,7 @@ import androidx.core.view.ViewCompat;
  * It's a totally abstract zoom layout.
  *
  */
-public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetector.OnScaleGestureListener{
+public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetector.OnScaleGestureListener, NestedScrollingChild3 {
     private static final String TAG="ZoomLayout";
     /**
      * When set, this ViewGroup should not intercept touch events.
@@ -91,6 +95,25 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
     private int minimumVelocity;
     private int maximumVelocity;
 
+
+    private final NestedScrollingChildHelper nestedScrollingChildHelper;
+    /**
+     * Used during scrolling to retrieve the new offset within the window.
+     */
+    private final int[] scrollOffset = new int[2];
+    private final int[] scrollConsumed = new int[2];
+    private int nestedXOffset;
+    private int nestedYOffset;
+
+    /**
+     * Temporarily calculate the scrolling distance. For NestedScrolling to know how far we moved.
+     * @see #startCalculateScrolling()
+     * @see #stopCalculateScrolling()
+     */
+    private int startCalculateScrolling=0;
+    private int layoutScrollX=0;
+    private int layoutScrollY=0;
+
     private OnLayoutScrollChangeListener scrollChangeListener;
     private OnLayoutScaleChangeListener scaleChangeListener;
     private OnLayoutChildDrawableStateChanged layoutChildDrawableStateChangeListener;
@@ -109,6 +132,9 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
         touchSlop = configuration.getScaledTouchSlop();
         minimumVelocity = configuration.getScaledMinimumFlingVelocity();
         maximumVelocity = configuration.getScaledMaximumFlingVelocity();
+
+        nestedScrollingChildHelper = new NestedScrollingChildHelper(this);
+        setNestedScrollingEnabled(true);
 
         scaleGestureDetector = new ScaleGestureDetector(context, this);
         viewFlinger=new ViewFlinger(context);
@@ -303,6 +329,32 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
         return target.dispatchTouchEvent(ev);
     }
 
+    protected void offsetChildrenLeftAndRight(int dx) {
+        int childCount = getChildCount();
+        if(0!=dx){
+            if(0 < startCalculateScrolling){
+                layoutScrollX+=dx;
+            }
+            for(int i=0;i<childCount;i++){
+                View childView = getChildAt(i);
+                childView.offsetLeftAndRight(dx);
+            }
+        }
+    }
+
+    protected void offsetChildrenTopAndBottom(int dy) {
+        int childCount = getChildCount();
+        if(0!=dy){
+            if(0 < startCalculateScrolling){
+                layoutScrollY+=dy;
+            }
+            for(int i=0;i<childCount;i++){
+                View childView = getChildAt(i);
+                childView.offsetTopAndBottom(dy);
+            }
+        }
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         int action = ev.getActionMasked();
@@ -320,12 +372,15 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
             viewFlinger.abortAnimation();
             lastMotionX = ev.getX();
             lastMotionY = ev.getY();
+            startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL,ViewCompat.TYPE_TOUCH);
         } else if(MotionEvent.ACTION_MOVE==action){
             float x = ev.getX();
             float y = ev.getY();
             float dx = x - lastMotionX;
             float dy = y - lastMotionY;
-            if (Math.abs(dx) > touchSlop||Math.abs(dy) > touchSlop) {
+            if (canScrollHorizontally()&&Math.abs(dx)> touchSlop||canScrollVertically()&&Math.abs(dy) > touchSlop) {
+                nestedXOffset = 0;
+                nestedYOffset = 0;
                 isBeingDragged = true;
                 ViewParent parent = getParent();
                 if(null!=parent){
@@ -333,6 +388,7 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
                 }
             }
         } else if(MotionEvent.ACTION_UP==action||MotionEvent.ACTION_CANCEL==action) {
+            stopNestedScroll(ViewCompat.TYPE_TOUCH);
             releaseDrag();
         }
         return isBeingDragged;
@@ -340,20 +396,18 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        //Process the scale gesture.
-        if(zoomEnabled){
-            scaleGestureDetector.onTouchEvent(ev);
-        }
-        if (velocityTracker == null) {
-            velocityTracker = VelocityTracker.obtain();
-        }
-        velocityTracker.addMovement(ev);
         int action = ev.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            nestedXOffset = 0;
+            nestedYOffset = 0;
+        }
+        MotionEvent vtev = MotionEvent.obtain(ev);
+        vtev.offsetLocation(canScrollHorizontally()?nestedXOffset:0, canScrollVertically()?nestedYOffset:0);
         if(MotionEvent.ACTION_DOWN==action){
+            nestedYOffset = 0;
             lastMotionX = ev.getX();
             lastMotionY = ev.getY();
             viewFlinger.abortAnimation();
-            invalidate();
             ViewParent parent = getParent();
             if(null!=parent){
                 parent.requestDisallowInterceptTouchEvent(true);
@@ -361,45 +415,101 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
         } else if(MotionEvent.ACTION_MOVE==action){
             float x = ev.getX();
             float y = ev.getY();
-            float dx = x - lastMotionX;
-            float dy = y - lastMotionY;
-            if (!isScaleDragged&&!isBeingDragged&&(Math.abs(dx) > touchSlop||Math.abs(dy) > touchSlop)) {
+            int dx = (int) (lastMotionX - x + 0.5f);
+            int dy = (int) (lastMotionY - y + 0.5f);
+
+            if(dispatchNestedPreScroll(dx,dy, scrollConsumed, scrollOffset,ViewCompat.TYPE_TOUCH)){
+                dx-= scrollConsumed[0];
+                dy-= scrollConsumed[1];
+                nestedXOffset += scrollOffset[0];
+                nestedYOffset += scrollOffset[1];
+            }
+
+            if (!isBeingDragged&&(canScrollHorizontally()&&Math.abs(dx) > touchSlop||
+                    canScrollVertically()&&Math.abs(dy) > touchSlop)) {
                 isBeingDragged = true;
                 lastMotionX = x;
                 lastMotionY = y;
+                if(canScrollHorizontally()){
+                    if (dx > 0) {
+                        dx -= touchSlop;
+                    } else {
+                        dx += touchSlop;
+                    }
+                } else if(canScrollVertically()){
+                    if (dy > 0) {
+                        dy -= touchSlop;
+                    } else {
+                        dy += touchSlop;
+                    }
+                }
                 ViewParent parent = getParent();
                 if(null!=parent){
                     parent.requestDisallowInterceptTouchEvent(true);
                 }
             }
-            //To avoid the scale gesture. We check the pointer count.
-            int pointerCount = ev.getPointerCount();
-            if (1==pointerCount&&!isScaleDragged&&isBeingDragged) {
-                lastMotionX = x;
-                lastMotionY = y;
-                float matrixScaleX = getLayoutScaleX();
-                float matrixScaleY = getLayoutScaleY();
-                int scaleDx = Math.round(dx / matrixScaleX);
-                int scaleDy = Math.round(dy / matrixScaleY);
-                scrollBy(-scaleDx,-scaleDy);
+            if (isBeingDragged) {
+                startCalculateScrolling();
+                lastMotionX = x - scrollOffset[0];
+                lastMotionY = y - scrollOffset[1];
+                int oldX = layoutScrollX;
+                int oldY = layoutScrollY;
+                scrollBy(dx,dy);
                 invalidate();
+
+                final int scrolledDeltaX = layoutScrollX - oldX;
+                final int scrolledDeltaY = layoutScrollY - oldY;
+                final int unconsumedX = dx - scrolledDeltaX;
+                final int unconsumedY = dy - scrolledDeltaY;
+                scrollConsumed[0] = 0;
+                scrollConsumed[1] = 0;
+                dispatchNestedScroll(scrolledDeltaX, scrolledDeltaY, unconsumedX, unconsumedY, scrollOffset,
+                        ViewCompat.TYPE_TOUCH, scrollConsumed);
+                nestedXOffset += scrollOffset[0];
+                nestedYOffset += scrollOffset[1];
+                stopCalculateScrolling();
             }
         } else if(MotionEvent.ACTION_UP==action){
-            if(!isScaleDragged&&null!=velocityTracker){
-                float matrixScaleX = getLayoutScaleX();
-                float matrixScaleY = getLayoutScaleY();
+            if(null!=velocityTracker){
                 velocityTracker.computeCurrentVelocity(1000,maximumVelocity);
-                float xVelocity = velocityTracker.getXVelocity();
-                float yVelocity = velocityTracker.getYVelocity();
-                if(Math.abs(xVelocity)>minimumVelocity||Math.abs(yVelocity)>minimumVelocity){
-                    viewFlinger.fling(-xVelocity/matrixScaleX,-yVelocity/matrixScaleY);
+                float xVelocity = !canScrollHorizontally()?0:velocityTracker.getXVelocity();
+                float yVelocity = !canScrollVertically()?0:velocityTracker.getYVelocity();
+                if(Math.abs(xVelocity)>minimumVelocity|| Math.abs(yVelocity)>minimumVelocity){
+                    if (!dispatchNestedPreFling(-xVelocity, -yVelocity)) {
+                        dispatchNestedFling(-xVelocity, -yVelocity, true);
+                        viewFlinger.fling(-xVelocity,-yVelocity);
+                    }
                 }
             }
+            stopNestedScroll(ViewCompat.TYPE_TOUCH);
             releaseDrag();
         } else if(MotionEvent.ACTION_CANCEL==action){
+            stopNestedScroll(ViewCompat.TYPE_TOUCH);
             releaseDrag();
         }
+        if (velocityTracker == null) {
+            velocityTracker = VelocityTracker.obtain();
+        }
+        velocityTracker.addMovement(vtev);
+        vtev.recycle();
         return true;
+    }
+
+
+    public void startCalculateScrolling() {
+        if(0==startCalculateScrolling){
+            layoutScrollX=0;
+            layoutScrollY=0;
+        }
+        startCalculateScrolling++;
+    }
+
+    public void stopCalculateScrolling() {
+        startCalculateScrolling--;
+        if(0==startCalculateScrolling){
+            layoutScrollX=0;
+            layoutScrollY=0;
+        }
     }
 
     /**
@@ -611,6 +721,11 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
     }
 
     @Override
+    public boolean canScrollVertically(int direction) {
+        return false;
+    }
+
+    @Override
     public void scrollBy(int x, int y) {
         final boolean canScrollHorizontal = canScrollHorizontally();
         final boolean canScrollVertical = canScrollVertically();
@@ -681,6 +796,13 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
         return true;
     }
 
+    public boolean isHorizontal(){
+        return true;
+    }
+
+    public boolean isVertical(){
+        return true;
+    }
 
     public int offsetChildrenHorizontal(@Px int dx) {
         final int childCount = getChildCount();
@@ -866,10 +988,53 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
         void childDrawableStateChanged(View child, float scaleX, float scaleY);
     }
 
+    @Override
+    public void setNestedScrollingEnabled(boolean enabled) {
+        nestedScrollingChildHelper.setNestedScrollingEnabled(enabled);
+    }
+
+    @Override
+    public boolean hasNestedScrollingParent(int type) {
+        return nestedScrollingChildHelper.hasNestedScrollingParent(type);
+    }
+
+    @Override
+    public boolean startNestedScroll(int axes, int type) {
+        return nestedScrollingChildHelper.startNestedScroll(axes,type);
+    }
+
+    @Override
+    public void stopNestedScroll(int type) {
+        nestedScrollingChildHelper.stopNestedScroll(type);
+    }
+
+    @Override
+    public boolean dispatchNestedPreScroll(int dx, int dy, int[] consumed, int[] offsetInWindow, int type) {
+        return nestedScrollingChildHelper.dispatchNestedPreScroll(dx,dy,consumed,offsetInWindow,type);
+    }
+
+    @Override
+    public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int[] offsetInWindow, int type, int[] consumed) {
+        nestedScrollingChildHelper.dispatchNestedScroll(dxConsumed,dyConsumed,dxUnconsumed,dyUnconsumed,offsetInWindow,type,consumed);
+    }
+
+    @Override
+    public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int[] offsetInWindow, int type) {
+        return nestedScrollingChildHelper.dispatchNestedScroll(dxConsumed,dyConsumed,dxUnconsumed,dyUnconsumed,offsetInWindow,type);
+    }
+
+    @Override
+    public boolean dispatchNestedPreFling(float velocityX, float velocityY) {
+        return nestedScrollingChildHelper.dispatchNestedPreFling(velocityX, velocityY);
+    }
+
+    @Override
+    public boolean dispatchNestedFling(float velocityX, float velocityY, boolean consumed) {
+        return nestedScrollingChildHelper.dispatchNestedFling(velocityX, velocityY, consumed);
+    }
+
     public class ViewFlinger implements Runnable{
         private final OverScroller overScroller;
-        private int lastFlingX = 0;
-        private int lastFlingY = 0;
 
         public ViewFlinger(Context context) {
             overScroller=new OverScroller(context);
@@ -877,31 +1042,63 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
 
         @Override
         public void run() {
-            if(!overScroller.isFinished()&&overScroller.computeScrollOffset()){
-                int currX = overScroller.getCurrX();
-                int currY = overScroller.getCurrY();
-                int dx = currX - lastFlingX;
-                int dy = currY - lastFlingY;
-                lastFlingX = currX;
-                lastFlingY = currY;
-//                // We are done scrolling if scroller is finished, or for both the x and y dimension,
-//                // we are done scrolling or we can't scroll further (we know we can't scroll further
-//                // when we have unconsumed scroll distance).  It's possible that we don't need
-//                // to also check for scroller.isFinished() at all, but no harm in doing so in case
-//                // of old bugs in OverScroller.
-//                boolean scrollerFinishedX = overScroller.getCurrX() == overScroller.getFinalX();
-//                boolean scrollerFinishedY = overScroller.getCurrY() == overScroller.getFinalY();
-//                final boolean doneScrolling = overScroller.isFinished()
-//                        || ((scrollerFinishedX || dx != 0) && (scrollerFinishedY || dy != 0));
-                scrollBy(dx,dy);
-                invalidate();
-                postOnAnimation();
+            if (overScroller.isFinished()) {
+                return;
             }
+            overScroller.computeScrollOffset();
+            int overScrollX = 0;
+            int overScrollY = 0;
+            int currX = overScroller.getCurrX();
+            int currY = overScroller.getCurrY();
+            int dxUnconsumed = (int) (currX-lastMotionX);
+            int dyUnconsumed = (int) (currY-lastMotionY);
+            lastMotionX = currX;
+            lastMotionY = currY;
+            // Nested Scrolling Pre Pass
+            scrollConsumed[0] = 0;
+            scrollConsumed[1] = 0;
+            dispatchNestedPreScroll(dxUnconsumed, dyUnconsumed, scrollConsumed, null, ViewCompat.TYPE_NON_TOUCH);
+            dxUnconsumed -= scrollConsumed[0];
+            dyUnconsumed -= scrollConsumed[1];
+            Log.i(TAG,"ViewFlinger1:"+dxUnconsumed+" dyUnconsumed:"+dyUnconsumed);
+            if (0 != dxUnconsumed || 0 != dyUnconsumed) {
+                // Internal Scroll
+                int dxConsumed = scrollHorizontallyBy(dxUnconsumed,false);
+                overScrollX = dxUnconsumed - dxConsumed;
+                dxUnconsumed -= dxConsumed;
+
+                int dyConsumed = scrollVerticallyBy(dyUnconsumed,false);
+                overScrollY = dyUnconsumed - dyConsumed;
+                dyUnconsumed -= dyConsumed;
+                // Nested Scrolling Post Pass
+                scrollConsumed[0] = 0;
+                scrollConsumed[1] = 0;
+                dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, scrollOffset, ViewCompat.TYPE_NON_TOUCH, scrollConsumed);
+                dxUnconsumed -= scrollConsumed[0];
+                dyUnconsumed -= scrollConsumed[1];
+                invalidate();
+            }
+            Log.i(TAG,"ViewFlinger2:"+dxUnconsumed+" dyUnconsumed:"+dyUnconsumed);
+            if (0 != dxUnconsumed && 0 != dyUnconsumed) {
+                overScroller.abortAnimation();
+                stopNestedScroll(ViewCompat.TYPE_NON_TOUCH);
+            }
+            if (overScrollX != 0 || overScrollY != 0) {
+                final int vel = (int) overScroller.getCurrVelocity();
+                int velX = 0;
+                if (overScrollX != currX) {
+                    velX = overScrollX < 0 ? -vel : overScrollX > 0 ? vel : 0;
+                }
+                int velY = 0;
+                if (overScrollY != currY) {
+                    velY = overScrollY < 0 ? -vel : overScrollY > 0 ? vel : 0;
+                }
+//                absorbGlows(velX, velY);
+            }
+            postOnAnimation();
         }
 
         void startScroll(int startX,int startY,int dx,int dy) {
-            lastFlingX = startX;
-            lastFlingY = startY;
             overScroller.startScroll(startX, startY, dx, dy);
             if (Build.VERSION.SDK_INT < 23) {
                 // b/64931938 before API 23, startScroll() does not reset getCurX()/getCurY()
@@ -923,9 +1120,20 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
         }
 
         void fling(float velocityX,float velocityY) {
-            lastFlingX = lastFlingY = 0;
             overScroller.fling(0, 0, (int)velocityX, (int)velocityY,
                     Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            runAnimatedScroll(true);
+        }
+
+        private void runAnimatedScroll(boolean participateInNestedScrolling) {
+            if (participateInNestedScrolling) {
+                startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL, ViewCompat.TYPE_NON_TOUCH);
+            } else {
+                stopNestedScroll(ViewCompat.TYPE_NON_TOUCH);
+            }
+            overScroller.computeScrollOffset();
+            lastMotionX = overScroller.getCurrX();
+            lastMotionY = overScroller.getCurrY();
             postOnAnimation();
         }
 
@@ -934,4 +1142,5 @@ public abstract class ZoomLayout extends ViewGroup implements ScaleGestureDetect
             ViewCompat.postOnAnimation(ZoomLayout.this, this);
         }
     }
+
 }

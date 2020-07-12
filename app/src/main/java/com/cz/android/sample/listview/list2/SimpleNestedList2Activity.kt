@@ -7,14 +7,12 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.cz.android.sample.R
 import com.cz.android.sample.api.Register
-import com.cz.android.sample.api.TestCase
 import com.cz.android.sample.library.data.DataManager
 import com.cz.android.sample.listview.list2.adapter.HorizontalSampleAdapter
 import com.cz.android.sample.listview.list2.adapter.VerticalSampleAdapter
 import com.cz.android.sample.listview.list2.decoration.DividerItemDecoration
 import kotlinx.android.synthetic.main.activity_simple_nested_list2.*
 
-@TestCase
 @Register(title = "SimpleListView2", desc = "演示不同方向列表操作")
 class SimpleNestedList2Activity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

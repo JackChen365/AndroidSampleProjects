@@ -4,9 +4,11 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.cz.android.sample.R
 import com.cz.android.sample.api.Register
+import com.cz.android.sample.api.TestCase
 import com.cz.android.sample.library.data.DataManager
 import kotlinx.android.synthetic.main.activity_table_sample.*
 
+@TestCase
 @Register(title = "表格演示")
 class TableSampleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,7 +17,7 @@ class TableSampleActivity : AppCompatActivity() {
 
         var startIndex=0
         val rowCount=20
-        val columnCount=6
+        val columnCount=20
         val dataProvider = DataManager.getDataProvider(this)
         val list = (0 until rowCount).map { dataProvider.getWordList(startIndex++, columnCount).toList() }.toList()
         val tableAdapter = SimpleTableLayoutAdapter(this, list)

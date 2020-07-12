@@ -39,7 +39,6 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
     private final Rect tempRect = new Rect();
 
     private final ArrayList<ItemDecoration> itemDecorations = new ArrayList<>();
-    private final SimpleNestedScrollingChildHelper nestedScrollingChildHelper;
     private final RecyclerBin recyclerBin=new RecyclerBin();
     private final LayoutState layoutState=new LayoutState();
     private final OrientationHelper.DynamicOrientationHelper orientationHelper=OrientationHelper.createDynamicHelper(this);;
@@ -56,6 +55,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
     private int minimumVelocity;
     private int maximumVelocity;
 
+    private final SimpleNestedScrollingChildHelper nestedScrollingChildHelper;
     /**
      * Tmporarily calculate the scrolling distance. For NestedScrolling to know how far we moved.
      * @see #startCalculateScrolling()
@@ -129,11 +129,6 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
         }
     }
 
-    @Override
-    public boolean shouldDelayChildPressedState() {
-        return true;
-    }
-
     private void initializeLayoutState() {
         int measurement = orientationHelper.getMeasurementAfterPadding();
         layoutState.available = measurement;
@@ -200,8 +195,8 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
             if(0 > layoutState.available){
                 layoutState.scrollingOffset +=layoutState.available;
             }
-            Log.i(TAG,"fill:"+layoutState.available+" mScrollingOffset:"+layoutState.scrollingOffset);
             recyclerList(layoutState);
+            Log.i(TAG,"fill:"+layoutState.available+" mScrollingOffset:"+layoutState.scrollingOffset);
         }
     }
 

@@ -378,7 +378,9 @@ public class SimpleLinearLayoutManager extends RecyclerView.LayoutManager {
         } else {
             for (int i = 0; i < childCount; i++) {
                 View child = getChildAt(i);
+                int decoratedEnd = mOrientationHelper.getDecoratedEnd(child);
                 if (mOrientationHelper.getDecoratedEnd(child) > limit) {// stop here
+                    Log.i(TAG,"recycleViewsFromStart:"+dt+" decoratedEnd:"+decoratedEnd+" i:"+i);
                     recycleChildren(recycler, 0, i);
                     return;
                 }
@@ -403,6 +405,7 @@ public class SimpleLinearLayoutManager extends RecyclerView.LayoutManager {
             return;
         }
         final int limit = mOrientationHelper.getEndAfterPadding() - dt;
+        Log.i(TAG,"recycleViewsFromEnd:"+dt+" limit:"+limit);
         if (mShouldReverseLayout) {
             for (int i = 0; i < childCount; i++) {
                 View child = getChildAt(i);

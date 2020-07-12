@@ -4,11 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingTop="100dp"
-    android:paddingBottom="100dp"
-    android:clipChildren="false"
-    android:clipToPadding="false"
-    android:background="@color/md_black_1000">
+    android:padding="12dp">
 
     <com.cz.android.sample.listview.list2.SimpleNestedListView
         android:id="@+id/nestedListView"
