@@ -9,7 +9,7 @@
         android:id="@+id/imageView"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:background="@color/colorPrimaryDark"
+        android:background="@color/colorAccent"
         android:layout_gravity="center_vertical" />
 
     <TextView

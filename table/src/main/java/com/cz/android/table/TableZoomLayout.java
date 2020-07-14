@@ -191,7 +191,9 @@ public class TableZoomLayout extends RecyclerZoomLayout {
                 int childEnd = orientationHelper.getDecoratedEnd(endView);
                 layoutState.layoutOffset = childEnd;
                 layoutState.layoutOffsetInOther = orientationHelper.getDecoratedStartInOther(startView);
-                scrollingOffset=childEnd-endAfterPadding;
+                if(childEnd>=endAfterPadding){
+                    scrollingOffset=childEnd-endAfterPadding;
+                }
             }
             layoutState.layoutTableColumn += layoutState.itemDirection;
         }
@@ -238,7 +240,7 @@ public class TableZoomLayout extends RecyclerZoomLayout {
 
     @Override
     public boolean canScrollHorizontally() {
-        return true;
+        return false;
     }
 
     @Override
@@ -279,6 +281,11 @@ public class TableZoomLayout extends RecyclerZoomLayout {
             }
             layoutState.layoutTableRow++;
             layoutState.available-=tableCellSize;
+            //Check if we need to recycler view that out of the screen.
+            layoutState.scrollingOffset +=tableCellSize;
+            if(0 > layoutState.available){
+                layoutState.scrollingOffset +=layoutState.available;
+            }
             left+=tableCellSize;
             column++;
         }
@@ -416,7 +423,9 @@ public class TableZoomLayout extends RecyclerZoomLayout {
                 int childEnd = orientationHelper.getDecoratedEnd(endView);
                 layoutState.layoutOffset = childEnd;
                 layoutState.layoutOffsetInOther = orientationHelper.getDecoratedStartInOther(startView);
-                scrollingOffset=childEnd-endAfterPadding;
+                if(childEnd>=endAfterPadding){
+                    scrollingOffset=childEnd-endAfterPadding;
+                }
             }
             layoutState.layoutTableRow += layoutState.itemDirection;
         }
@@ -507,6 +516,11 @@ public class TableZoomLayout extends RecyclerZoomLayout {
             }
             layoutState.layoutTableRow--;
             layoutState.available-=tableCellSize;
+            //Check if we need to recycler view that out of the screen.
+            layoutState.scrollingOffset +=tableCellSize;
+            if(0 > layoutState.available){
+                layoutState.scrollingOffset +=layoutState.available;
+            }
             top-=tableCellSize;
             row++;
         }

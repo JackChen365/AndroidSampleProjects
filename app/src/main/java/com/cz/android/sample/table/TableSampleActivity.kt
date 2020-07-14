@@ -16,13 +16,13 @@ class TableSampleActivity : AppCompatActivity() {
         setContentView(R.layout.activity_table_sample)
 
         var startIndex=0
-        val rowCount=20
-        val columnCount=20
+        val rowCount=40
+        val columnCount=1
         val dataProvider = DataManager.getDataProvider(this)
         val list = (0 until rowCount).map { dataProvider.getWordList(startIndex++, columnCount).toList() }.toList()
         val tableAdapter = SimpleTableLayoutAdapter(this, list)
 
-        zoomLayout.addItemDecoration(TableDecoration(this))
+//        zoomLayout.addItemDecoration(TableDecoration(this))
         zoomLayout.setAdapter(tableAdapter)
         scaleButton.setOnClickListener {
             zoomLayout.setViewScale(1.5f)

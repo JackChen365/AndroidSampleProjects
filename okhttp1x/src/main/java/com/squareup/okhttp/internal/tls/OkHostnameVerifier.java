@@ -68,7 +68,7 @@ public final class OkHostnameVerifier implements HostnameVerifier {
         : verifyHostName(host, certificate);
   }
 
-  static boolean verifyAsIpAddress(String host) {
+  public static boolean verifyAsIpAddress(String host) {
     return VERIFY_AS_IP_ADDRESS.matcher(host).matches();
   }
 

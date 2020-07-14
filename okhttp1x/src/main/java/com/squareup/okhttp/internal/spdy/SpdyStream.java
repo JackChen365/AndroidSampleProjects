@@ -369,11 +369,11 @@ public final class SpdyStream {
         ? STATUS_CODE_NAMES[rstStatusCode] : Integer.toString(rstStatusCode);
   }
 
-  int getPriority() {
+  public int getPriority() {
     return priority;
   }
 
-  int getSlot() {
+  public int getSlot() {
     return slot;
   }
 

@@ -94,6 +94,7 @@ public class NestedParentLayout extends ViewGroup implements SimpleNestedScrolli
     public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         boolean canScrollVertically = target.canScrollVertically(dy);
         int top = getTop();
+        //0
         int targetTop = getViewTop(this, target);
         if(0 < dy && -top < targetTop){
             //Over the top of the parent.

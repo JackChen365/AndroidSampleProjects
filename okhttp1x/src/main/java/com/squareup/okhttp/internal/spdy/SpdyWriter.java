@@ -27,12 +27,12 @@ import java.util.List;
 import java.util.zip.Deflater;
 
 /** Write spdy/3 frames. */
-final class SpdyWriter implements Closeable {
+public final class SpdyWriter implements Closeable {
   final DataOutputStream out;
   private final ByteArrayOutputStream nameValueBlockBuffer;
   private final DataOutputStream nameValueBlockOut;
 
-  SpdyWriter(OutputStream out) {
+  public SpdyWriter(OutputStream out) {
     this.out = new DataOutputStream(out);
 
     Deflater deflater = new Deflater();

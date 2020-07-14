@@ -40,7 +40,7 @@ public final class ResponseHeaders {
   private static final String RECEIVED_MILLIS = "X-Android-Received-Millis";
 
   /** HTTP synthetic header with the response source. */
-  static final String RESPONSE_SOURCE = "X-Android-Response-Source";
+  public static final String RESPONSE_SOURCE = "X-Android-Response-Source";
 
   private final URI uri;
   private final RawHeaders headers;

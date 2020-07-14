@@ -31,7 +31,7 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 /** Read spdy/3 frames. */
-final class SpdyReader implements Closeable {
+public final class SpdyReader implements Closeable {
   static final byte[] DICTIONARY;
   static {
     try {
@@ -77,7 +77,7 @@ final class SpdyReader implements Closeable {
   private final DataInputStream nameValueBlockIn;
   private int compressedLimit;
 
-  SpdyReader(InputStream in) {
+  public SpdyReader(InputStream in) {
     this.in = new DataInputStream(in);
     this.nameValueBlockIn = newNameValueBlockStream();
   }

@@ -55,25 +55,25 @@ public final class SpdyConnection implements Closeable {
   // operations must synchronize on 'this' last. This ensures that we never
   // wait for a blocking operation while holding 'this'.
 
-  static final int FLAG_FIN = 0x1;
-  static final int FLAG_UNIDIRECTIONAL = 0x2;
+  public static final int FLAG_FIN = 0x1;
+  public static final int FLAG_UNIDIRECTIONAL = 0x2;
 
-  static final int TYPE_DATA = 0x0;
-  static final int TYPE_SYN_STREAM = 0x1;
-  static final int TYPE_SYN_REPLY = 0x2;
-  static final int TYPE_RST_STREAM = 0x3;
-  static final int TYPE_SETTINGS = 0x4;
-  static final int TYPE_NOOP = 0x5;
-  static final int TYPE_PING = 0x6;
-  static final int TYPE_GOAWAY = 0x7;
-  static final int TYPE_HEADERS = 0x8;
-  static final int TYPE_WINDOW_UPDATE = 0x9;
-  static final int TYPE_CREDENTIAL = 0x10;
-  static final int VERSION = 3;
+  public static final int TYPE_DATA = 0x0;
+  public static final int TYPE_SYN_STREAM = 0x1;
+  public static final int TYPE_SYN_REPLY = 0x2;
+  public static final int TYPE_RST_STREAM = 0x3;
+  public static final int TYPE_SETTINGS = 0x4;
+  public static final int TYPE_NOOP = 0x5;
+  public static final int TYPE_PING = 0x6;
+  public static final int TYPE_GOAWAY = 0x7;
+  public static final int TYPE_HEADERS = 0x8;
+  public static final int TYPE_WINDOW_UPDATE = 0x9;
+  public static final int TYPE_CREDENTIAL = 0x10;
+  public static final int VERSION = 3;
 
   static final int GOAWAY_OK = 0;
-  static final int GOAWAY_PROTOCOL_ERROR = 1;
-  static final int GOAWAY_INTERNAL_ERROR = 2;
+  public static final int GOAWAY_PROTOCOL_ERROR = 1;
+  public static final int GOAWAY_INTERNAL_ERROR = 2;
 
   private static final ExecutorService executor = new ThreadPoolExecutor(0,
       Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(),
@@ -102,7 +102,7 @@ public final class SpdyConnection implements Closeable {
   private int nextPingId;
 
   /** Lazily-created settings for this connection. */
-  Settings settings;
+  public Settings settings;
 
   private SpdyConnection(Builder builder) {
     client = builder.client;

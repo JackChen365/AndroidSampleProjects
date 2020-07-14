@@ -57,7 +57,7 @@ public class SimpleNestedListView extends ViewGroup implements SimpleNestedScrol
 
     private final SimpleNestedScrollingChildHelper nestedScrollingChildHelper;
     /**
-     * Tmporarily calculate the scrolling distance. For NestedScrolling to know how far we moved.
+     * Tmporarily calculate the scrolling distance. For NestedScrolling to know how far we scrolled.
      * @see #startCalculateScrolling()
      * @see #stopCalculateScrolling()
      */

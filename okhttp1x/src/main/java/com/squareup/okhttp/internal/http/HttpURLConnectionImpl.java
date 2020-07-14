@@ -66,7 +66,7 @@ import static com.squareup.okhttp.internal.Util.getEffectivePort;
 public class HttpURLConnectionImpl extends HttpURLConnection {
 
   /** Numeric status code, 307: Temporary Redirect. */
-  static final int HTTP_TEMP_REDIRECT = 307;
+  public static final int HTTP_TEMP_REDIRECT = 307;
 
   /**
    * How many redirects should we follow? Chrome follows 21; Firefox, curl,

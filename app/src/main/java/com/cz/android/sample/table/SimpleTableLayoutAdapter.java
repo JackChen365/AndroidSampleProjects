@@ -105,7 +105,7 @@ public class SimpleTableLayoutAdapter extends TableZoomLayout.Adapter {
                 image=Data.getImage();
                 imageArray.put(index,image);
             }
-            Glide.with(view.getContext()).load(image).transition(withCrossFade()).into(imageView);
+//            Glide.with(view.getContext()).load(image).transition(withCrossFade()).into(imageView);
 //            SpannableStringBuilder stringBuilder = new SpannableStringBuilder(value);
 //            final Random random=new Random();
 //            for(int i=0;i<1;i++){
