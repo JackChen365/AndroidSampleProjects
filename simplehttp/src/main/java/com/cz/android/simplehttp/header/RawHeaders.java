@@ -17,7 +17,8 @@
 
 package com.cz.android.simplehttp.header;
 
-import com.okay.java.sample.http.pool.Util;
+import com.cz.android.simplehttp.pool.Util;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;

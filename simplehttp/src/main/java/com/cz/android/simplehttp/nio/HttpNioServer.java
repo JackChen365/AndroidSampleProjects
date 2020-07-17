@@ -1,6 +1,5 @@
 package com.cz.android.simplehttp.nio;
 
-import com.okay.java.sample.http.HttpUrlConnectionClient;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.EOFException;
@@ -20,7 +19,7 @@ import java.util.*;
 
 /**
  * The simplest http server. Only support the method: GET.
- * Cooperate with the class {@link HttpUrlConnectionClient} which is the client use {@link java.net.HttpURLConnection} fetch something from this server.
+ * Cooperate with the class {@link com.cz.android.simplehttp.HttpUrlConnectionClient} which is the client use {@link java.net.HttpURLConnection} fetch something from this server.
  */
 public class HttpNioServer {
     private static final String METHOD_GET="GET";

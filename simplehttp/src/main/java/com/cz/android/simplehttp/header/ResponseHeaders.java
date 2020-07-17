@@ -16,9 +16,8 @@
 
 package com.cz.android.simplehttp.header;
 
-import com.okay.java.sample.http.HeaderParser;
-import com.okay.java.sample.http.HttpDate;
-import com.okay.java.sample.http.pool.Util;
+
+import com.cz.android.simplehttp.pool.Util;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;

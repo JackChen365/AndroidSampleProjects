@@ -1,7 +1,5 @@
 package com.cz.android.simplehttp.header;
 
-import com.okay.java.sample.http.HeaderParser;
-import com.okay.java.sample.http.HttpDate;
 
 import java.net.URI;
 import java.util.Date;

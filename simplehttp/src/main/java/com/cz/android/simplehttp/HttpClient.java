@@ -1,9 +1,9 @@
 package com.cz.android.simplehttp;
 
-import com.okay.java.sample.http.header.RawHeaders;
-import com.okay.java.sample.http.header.ResponseHeaders;
-import com.okay.java.sample.http.pool.Connection;
-import com.okay.java.sample.http.pool.ConnectionPool;
+import com.cz.android.simplehttp.header.RawHeaders;
+import com.cz.android.simplehttp.header.ResponseHeaders;
+import com.cz.android.simplehttp.pool.Connection;
+import com.cz.android.simplehttp.pool.ConnectionPool;
 
 import java.io.*;
 import java.net.*;

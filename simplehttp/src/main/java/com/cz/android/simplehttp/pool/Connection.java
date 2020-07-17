@@ -19,6 +19,11 @@ package com.cz.android.simplehttp.pool;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.Set;
 
 public final class Connection implements Closeable {
   private Socket socket;
@@ -38,11 +43,12 @@ public final class Connection implements Closeable {
     this.port=port;
     connected = true;
     socket = new Socket();
+
     InetSocketAddress httpSocketAddress = new InetSocketAddress(host,port);
-    socket.connect(httpSocketAddress, connectTimeout);
-    socket.setSoTimeout(readTimeout);
-    in = socket.getInputStream();
-    out = socket.getOutputStream();
+    this.socket.connect(httpSocketAddress, connectTimeout);
+    this.socket.setSoTimeout(readTimeout);
+    in = this.socket.getInputStream();
+    out = this.socket.getOutputStream();
 
     // Smaller than 1500 to leave room for headers on interfaces like PPPoE.
     int mtu = 1400;
@@ -76,7 +82,9 @@ public final class Connection implements Closeable {
     return socket;
   }
 
-  /** Returns true if this connection is alive. */
+  /**
+   * Returns true if this connection is alive.
+   **/
   public boolean isAlive() {
     return !socket.isClosed() && !socket.isInputShutdown() && !socket.isOutputShutdown();
   }
