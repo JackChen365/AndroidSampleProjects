@@ -16,7 +16,6 @@
 
 package com.cz.android.simplehttp.header;
 
-
 import com.cz.android.simplehttp.pool.Util;
 
 import java.io.IOException;

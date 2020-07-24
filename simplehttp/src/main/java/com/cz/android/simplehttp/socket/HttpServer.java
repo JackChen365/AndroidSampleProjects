@@ -1,9 +1,8 @@
 package com.cz.android.simplehttp.socket;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import com.cz.android.simplehttp.header.RawHeaders;
+
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -14,7 +13,7 @@ import java.util.List;
 
 public class HttpServer {
     public static void main( String[] args ) throws Exception {
-        try (ServerSocket serverSocket = new ServerSocket(8080)) {
+        try (ServerSocket serverSocket = new ServerSocket(8090)) {
             while (true) {
                 try (Socket client = serverSocket.accept()) {
                     handleClient(client);
@@ -25,7 +24,6 @@ public class HttpServer {
 
     private static void handleClient(Socket client) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(client.getInputStream()));
-
         StringBuilder requestBuilder = new StringBuilder();
         String line;
         while ((line = br.readLine())!=null) {
