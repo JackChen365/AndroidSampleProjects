@@ -199,6 +199,7 @@ public class TableZoomLayout extends RecyclerZoomLayout {
         }
         layoutState.available= requiredSpace - scrollingOffset;
         layoutState.scrollingOffset = scrollingOffset;
+        Log.i(TAG,"updateLayoutStateHorizontally:"+layoutState.available+" scrollingOffset:"+scrollingOffset+" layoutOffset:"+layoutState.layoutOffset+" layoutOffsetInOther:"+layoutState.layoutOffsetInOther);
     }
 
     @Override
@@ -207,14 +208,10 @@ public class TableZoomLayout extends RecyclerZoomLayout {
             return 0;
         }
         orientationHelper.setOrientation(OrientationHelper.HORIZONTAL);
-        int firstVisibleTableColumn = findFirstVisibleTableColumn();
-        int lastVisibleTableColumn = findLastVisibleTableColumn();
-        boolean canScrollHorizontally = canScrollHorizontally(dx);
         int consumedX=0;
         if (dx != 0) {
             consumedX = scrollHorizontallyByInternal(dx);
         }
-        Log.i(TAG,"scrollHorizontallyBy:"+firstVisibleTableColumn+" lastVisibleTableColumn:"+lastVisibleTableColumn+" canScrollHorizontally:"+canScrollHorizontally+" dx:"+dx+" consumedX:"+consumedX);
         if(0 != consumedX){
             offsetChildrenLeftAndRight(-consumedX);
         }
@@ -370,13 +367,10 @@ public class TableZoomLayout extends RecyclerZoomLayout {
             int childEnd = orientationHelper.getDecoratedEnd(childView);
             if(childEnd <= limit){
                 onRemoveAndRecycleView(childView);
-                int childCount = getChildCount();
-                Log.i(TAG,"recycleFromStartHorizontally:"+" dt:"+dt+" limit:"+limit+" i:"+index+" childEnd:"+childEnd+" childCount:"+childCount);
                 continue;
             }
             index++;
         }
-        Log.i(TAG,"recycleFromStartHorizontally:"+" dt:"+dt+" limit:"+limit+" childCount:"+getChildCount());
     }
 
     private void recycleViewFromEnd(int dt) {
@@ -386,12 +380,10 @@ public class TableZoomLayout extends RecyclerZoomLayout {
             View childView = getChildAt(index);
             int childStart = orientationHelper.getDecoratedStart(childView);
             if(childStart >= limit){
-                Log.i(TAG,"recycleFromEndHorizontally:"+childStart+" limit:"+limit+" i:"+index+" childCount:"+getChildCount());
                 onRemoveAndRecycleView(childView);
             }
             index--;
         }
-        Log.i(TAG,"recycleFromEndHorizontally:"+" dt:"+dt+" limit:"+limit+" childCount:"+getChildCount());
     }
 
     private void updateLayoutStateVertically(LayoutState layoutState, int layoutDirection, int requiredSpace){
@@ -431,6 +423,7 @@ public class TableZoomLayout extends RecyclerZoomLayout {
         }
         layoutState.available= requiredSpace - scrollingOffset;
         layoutState.scrollingOffset = scrollingOffset;
+        Log.i(TAG,"updateLayoutStateVertically:"+layoutState.available+" scrollingOffset:"+scrollingOffset+" layoutOffset:"+layoutState.layoutOffset+" layoutOffsetInOther:"+layoutState.layoutOffsetInOther);
     }
 
     @Override
@@ -459,7 +452,6 @@ public class TableZoomLayout extends RecyclerZoomLayout {
         if(0 != consumedY){
             offsetChildrenTopAndBottom(-consumedY);
         }
-        Log.i(TAG,"scrollVerticallyBy:"+firstVisibleTableRow+" lastVisibleTableRow:"+lastVisibleTableRow+" canScrollVertically:"+canScrollVertically+" dy:"+dy+" consumedY:"+consumedY);
         return consumedY;
     }
 
@@ -580,6 +572,8 @@ public class TableZoomLayout extends RecyclerZoomLayout {
 
 
     protected void onRemoveAndRecycleView(View child) {
+        LayoutParams layoutParams = (LayoutParams) child.getLayoutParams();
+        Log.i(TAG,"onRemoveAndRecycleView:"+layoutParams.row+" column:"+layoutParams.column);
         removeAndRecycleView(child);
     }
 

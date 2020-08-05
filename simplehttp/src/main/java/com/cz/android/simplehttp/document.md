@@ -63,3 +63,9 @@ The document has moved
 <A HREF="http://www.google.com/">here</A>.
 </BODY></HTML>
 ```
+
+
+## References
+
+* [java-thread-practice-multi-thread-download](https://programmer.help/blogs/java-thread-practice-multi-thread-download-2.html)
+* [Multi-threaded download file](https://www.programmersought.com/article/574868641/)

@@ -1,0 +1,65 @@
+POST / HTTP/1.1
+Content-Type: multipart/form-data; boundary=1738afb7b23
+User-Agent: Java/14.0.1
+Host: localhost:8090
+Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
+Connection: keep-alive
+Transfer-Encoding: chunked
+
+6f
+--1738afb7b23
+Content-Disposition: form-data; name="param"
+Content-Type: text/plain; charset=UTF-8
+
+value
+
+1f9
+--1738afb7b23
+Content-Disposition: form-data; name="textFile"; filename="index.html"
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 597
+
+<start>
+# GENERATED FROM XML -- DO NOT EDIT
+
+URI: index.html.en
+Content-Language: en
+Content-type: text/html; charset=ISO-8859-1
+
+URI: index.html.es
+Content-Language: es
+Content-type: text/html; charset=ISO-8859-1
+
+URI: index.html.fr
+Content-Language: fr
+Content-type: text/html; charset=ISO-8859-1
+
+URI: index.html.ja.utf8
+Content-Langua
+f5
+ge: ja
+Content-type: text/html; charset=UTF-8
+
+URI: index.html.ko.euc-kr
+Content-Language: ko
+Content-type: text/html; charset=EUC-KR
+
+URI: index.html.zh-cn.utf8
+Content-Language: zh-cn
+Content-type: text/html; charset=UTF-8
+</start>
+
+ba
+--1738afb7b23
+Content-Disposition: form-data; name="binaryFile"; filename="help.txt"
+Content-Type: text/plain
+Content-Transfer-Encoding: binary
+Content-Length: 14
+
+help guideline
+
+11
+--1738afb7b23--
+
+0
+

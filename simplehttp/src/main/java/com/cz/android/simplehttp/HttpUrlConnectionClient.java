@@ -11,7 +11,7 @@ import java.util.concurrent.*;
 public class HttpUrlConnectionClient {
     public static void main(String[] args) {
         int availableProcessors = Runtime.getRuntime().availableProcessors() + 1;
-        final ThreadPoolExecutor executorService = new ThreadPoolExecutor(availableProcessors,availableProcessors,1, TimeUnit.NANOSECONDS,new LinkedBlockingDeque<>());
+        final ThreadPoolExecutor executorService = new ThreadPoolExecutor(availableProcessors,availableProcessors,1, TimeUnit.NANOSECONDS,new LinkedBlockingDeque<Runnable>());
         executorService.allowCoreThreadTimeOut(true);
         final Runnable task=new Runnable() {
             @Override
