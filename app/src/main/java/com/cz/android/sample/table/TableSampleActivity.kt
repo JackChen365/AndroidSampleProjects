@@ -8,7 +8,6 @@ import com.cz.android.sample.api.TestCase
 import com.cz.android.sample.library.data.DataManager
 import kotlinx.android.synthetic.main.activity_table_sample.*
 
-@TestCase
 @Register(title = "表格演示")
 class TableSampleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

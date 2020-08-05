@@ -9,7 +9,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".listview.list2.SimpleNestedList2Activity"></activity>
+        <activity android:name=".text.TextViewSample4Activity"></activity>
+        <activity android:name=".text.TextViewSample3Activity" />
+        <activity android:name=".listview.list2.SimpleNestedList2Activity" />
         <activity android:name=".nested.sample4.NestedScrollSample4Activity" />
         <activity android:name=".recycler.RecyclerViewRecyclerTestActivity" />
         <activity android:name=".nested.sample3.NestedScrollSample3Activity" />
