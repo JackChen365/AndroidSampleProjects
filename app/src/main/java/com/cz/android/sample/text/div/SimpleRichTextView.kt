@@ -1,4 +1,4 @@
-package com.cz.android.sample.text
+package com.cz.android.sample.text.div
 
 import android.content.Context
 import android.graphics.Canvas
@@ -12,12 +12,13 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewGroup
 import com.cz.android.sample.R
-import com.cz.android.text.layout.ChunkBoringStaticLayout
-import com.cz.android.text.layout.Layout
+import com.cz.android.text.layout.div.DivisionLayout
+import com.cz.android.text.layout.div.DivisionStaticLayout
+import com.cz.android.text.layout.div.TextDivision
 import kotlin.system.measureTimeMillis
 
 
-class BoringChunkTextView @JvmOverloads constructor(
+class SimpleRichTextView @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ViewGroup(context, attrs, defStyleAttr) {
 
         companion object{
@@ -30,7 +31,7 @@ class BoringChunkTextView @JvmOverloads constructor(
         /**
          * 文本排版layout对象
          */
-        private var layout: Layout?=null
+        private var layout: DivisionLayout?=null
         /**
          * 画笔对象
          */
@@ -61,15 +62,24 @@ class BoringChunkTextView @JvmOverloads constructor(
                 requestLayout()
         }
 
-        fun getLayout():Layout?{
-                return layout
+        fun addTextDivision(textDivision: TextDivision){
+
+        }
+
+        fun removeTextDivision(textDivision: TextDivision){
+
+        }
+
+
+        fun getLineCount():Int{
+                return layout?.lineCount?:0
         }
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-                if(null!=text&&0!=measuredWidth&&(null==layout||text!=layout?.text)){
+                if(null!=text&& 0 != measuredWidth &&(null==layout||text!=layout?.text)){
                         val measureTimeMillis = measureTimeMillis {
-                                layout = ChunkBoringStaticLayout(
+                                layout = DivisionStaticLayout(
                                         text,
                                         textPaint,
                                         measuredWidth - paddingLeft - paddingRight
@@ -142,7 +152,11 @@ class BoringChunkTextView @JvmOverloads constructor(
                                 }
                                 TextUtils.getChars(text,lineStart,lineEnd,charArray,0)
 
-                                val textLineInfo = TextLineInfo(line, String(charArray))
+                                val textLineInfo =
+                                    TextLineInfo(
+                                        line,
+                                        String(charArray)
+                                    )
                                 textLineInfo.lineStart=lineStart
                                 textLineInfo.lineEnd=lineEnd
                                 textLineInfo.lineTop = layout.getLineTop(line)

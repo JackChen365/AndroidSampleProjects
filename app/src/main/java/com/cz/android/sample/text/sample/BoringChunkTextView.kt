@@ -1,4 +1,4 @@
-package com.cz.android.sample.text
+package com.cz.android.sample.text.sample
 
 import android.content.Context
 import android.graphics.Canvas
@@ -12,12 +12,12 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewGroup
 import com.cz.android.sample.R
+import com.cz.android.text.layout.ChunkBoringStaticLayout
 import com.cz.android.text.layout.Layout
-import com.cz.android.text.layout.StaticLayout
 import kotlin.system.measureTimeMillis
 
 
-class SimpleTextView @JvmOverloads constructor(
+class BoringChunkTextView @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ViewGroup(context, attrs, defStyleAttr) {
 
         companion object{
@@ -61,15 +61,18 @@ class SimpleTextView @JvmOverloads constructor(
                 requestLayout()
         }
 
+        fun getLayout():Layout?{
+                return layout
+        }
+
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-                if(null!=text&& 0 != measuredWidth &&(null==layout||text!=layout?.text)){
+                if(null!=text&&0!=measuredWidth&&(null==layout||text!=layout?.text)){
                         val measureTimeMillis = measureTimeMillis {
-                                layout = StaticLayout(
+                                layout = ChunkBoringStaticLayout(
                                         text,
                                         textPaint,
-                                        measuredWidth - paddingLeft - paddingRight,
-                                        0f
+                                        measuredWidth - paddingLeft - paddingRight
                                 )
                         }
                         //添加调试信息
@@ -139,7 +142,11 @@ class SimpleTextView @JvmOverloads constructor(
                                 }
                                 TextUtils.getChars(text,lineStart,lineEnd,charArray,0)
 
-                                val textLineInfo = TextLineInfo(line, String(charArray))
+                                val textLineInfo =
+                                    TextLineInfo(
+                                        line,
+                                        String(charArray)
+                                    )
                                 textLineInfo.lineStart=lineStart
                                 textLineInfo.lineEnd=lineEnd
                                 textLineInfo.lineTop = layout.getLineTop(line)

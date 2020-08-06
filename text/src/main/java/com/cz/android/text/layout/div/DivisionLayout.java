@@ -1,4 +1,4 @@
-package com.cz.android.text.layout;
+package com.cz.android.text.layout.div;
 
 
 import android.graphics.Canvas;
@@ -6,7 +6,12 @@ import android.graphics.Rect;
 import android.text.Spanned;
 import android.text.TextPaint;
 
+import androidx.annotation.NonNull;
+
 import com.cz.android.text.Styled;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 文本排版layout
@@ -15,15 +20,16 @@ import com.cz.android.text.Styled;
  * 2. 实现断行策略抽离
  * 3. 实现span
  */
-public abstract class Layout {
+public abstract class DivisionLayout {
     private CharSequence text;
     private TextPaint paint;
-    protected TextPaint workPaint;
+    TextPaint workPaint;
     private int width;
     private float spacingAdd;
     private static Rect tempRect = new Rect();
     private Spanned spanned;
     private boolean spannedText;
+    private List<TextDivision> textDivisionList;
 
     /**
      *
@@ -32,8 +38,8 @@ public abstract class Layout {
      * @param width 排版宽
      * @param spacingAdd  行额外添加空间
      */
-    protected Layout(CharSequence text, TextPaint paint,
-                     int width, float spacingAdd) {
+    protected DivisionLayout(CharSequence text, TextPaint paint,
+                             int width, float spacingAdd) {
         if (width < 0)
             throw new IllegalArgumentException("Layout: " + width + " < 0");
         this.text = text;
@@ -45,6 +51,20 @@ public abstract class Layout {
             spanned = (Spanned) text;
         spannedText = text instanceof Spanned;
     }
+
+    public void addTextDivision(@NonNull TextDivision textDivision){
+        if(null==textDivisionList){
+            textDivisionList=new ArrayList<>();
+        }
+        textDivisionList.add(textDivision);
+    }
+
+    public void removeTextDivision(@NonNull TextDivision textDivision){
+        if(null!=textDivisionList){
+            textDivisionList.remove(textDivision);
+        }
+    }
+
 
     /**
      * 获得指定类型的span对象

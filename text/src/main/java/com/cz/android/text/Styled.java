@@ -5,6 +5,7 @@ import android.graphics.Paint;
 import android.text.Spanned;
 import android.text.TextPaint;
 
+import com.cz.android.text.spannable.SpannableString;
 import com.cz.android.text.style.CharacterStyle;
 import com.cz.android.text.style.MetricAffectingSpan;
 import com.cz.android.text.style.ReplacementSpan;
@@ -148,12 +149,15 @@ public class Styled
 				span.updateMeasureState(workPaint);
 			}
 		}
-	
         if (replacement == null) {
             workPaint.getFontMetricsInt(fmi);
             workPaint.getTextWidths(text, start, end, widths);
         } else {
-            int wid = replacement.getSize(workPaint, text, start, end, fmi);
+            int wid = 0;
+            int spanStart = text.getSpanStart(replacement);
+            if(start <= spanStart && spanStart <= end){
+                wid = replacement.getSize(workPaint, text, start, end, fmi);
+            }
             if (end > start) {
                 widths[0] = wid;
                 for (int i = start + 1; i < end; i++)

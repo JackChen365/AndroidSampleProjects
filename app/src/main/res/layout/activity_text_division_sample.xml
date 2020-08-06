@@ -8,7 +8,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <com.cz.android.sample.text.sample.SimpleTextView
+        <com.cz.android.sample.text.div.SimpleRichTextView
             android:id="@+id/text1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -17,18 +17,4 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right|bottom"
-        android:background="@color/md_grey_200"
-        android:layout_margin="12dp">
-
-        <TextView
-            android:id="@+id/messageTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="12dp"/>
-
-    </androidx.core.widget.NestedScrollView>
 </FrameLayout>

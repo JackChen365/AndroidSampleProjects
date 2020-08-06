@@ -1,4 +1,4 @@
-package com.cz.android.sample.text
+package com.cz.android.sample.text.sample
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -23,7 +23,8 @@ class TextViewSample1Activity : AppCompatActivity() {
         val text = assets.open("chapter1").bufferedReader().readText()
         textView.setText(text)
         //添加调试信息
-        textView.setOnMessageChangeListener(object :SimpleTextView.OnTextClickListener{
+        textView.setOnMessageChangeListener(object :
+            SimpleTextView.OnTextClickListener{
             override fun onTextClicked(textLineInfo: SimpleTextView.TextLineInfo) {
                 messageTextView.text = textLineInfo.toString()
             }

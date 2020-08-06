@@ -1,4 +1,4 @@
-package com.cz.android.sample.text
+package com.cz.android.sample.text.buffer
 
 import android.content.Context
 import android.graphics.Canvas
@@ -12,12 +12,12 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewGroup
 import com.cz.android.sample.R
-import com.cz.android.text.layout.ChunkStaticLayout
 import com.cz.android.text.layout.Layout
+import com.cz.android.text.layout.buffer.BufferedBoringStaticLayout
 import kotlin.system.measureTimeMillis
 
 
-class ChunkTextView @JvmOverloads constructor(
+class BufferedTextView @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ViewGroup(context, attrs, defStyleAttr) {
 
         companion object{
@@ -69,11 +69,12 @@ class ChunkTextView @JvmOverloads constructor(
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec)
                 if(null!=text&&0!=measuredWidth&&(null==layout||text!=layout?.text)){
                         val measureTimeMillis = measureTimeMillis {
-                                layout = ChunkStaticLayout(
-                                        text,
-                                        textPaint,
-                                        measuredWidth - paddingLeft - paddingRight
-                                )
+                                layout =
+                                        BufferedBoringStaticLayout(
+                                                text,
+                                                textPaint,
+                                                measuredWidth - paddingLeft - paddingRight
+                                        )
                         }
                         //添加调试信息
                         Log.e(TAG,"初始化Layout时长:$measureTimeMillis\n")
