@@ -1,5 +1,6 @@
 package com.cz.android.text.layout.div;
 
+import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -22,8 +23,6 @@ public class DivisionStaticLayout extends DivisionLayout {
     private static final int DESCENT = 2;
     private static final int START_MASK = 0x1FFFFFFF;
     private int outerWidth;
-    private int start, end;
-    private int here,ok,fit;
 
     private int lineCount;
     private int columns;
@@ -31,7 +30,11 @@ public class DivisionStaticLayout extends DivisionLayout {
     private int[] lines;
     private float[] widths;
 
+    private TextLayoutState layoutState;
+    private InnerStaticLayout staticLayout;
 
+    private Paint.FontMetricsInt fitFontMetricsInt;
+    private Paint.FontMetricsInt okFontMetricsInt;
     private Paint.FontMetricsInt fontMetricsInt;
     /**
      * @param source      操作文本
@@ -42,26 +45,28 @@ public class DivisionStaticLayout extends DivisionLayout {
         super(source, paint, width, 0);
         columns = COLUMNS_NORMAL;
         outerWidth = width;
+        layoutState=new TextLayoutState();
         fontMetricsInt = new Paint.FontMetricsInt();
+        fitFontMetricsInt = new Paint.FontMetricsInt();
+        okFontMetricsInt = new Paint.FontMetricsInt();
         lines = new int[ArrayUtils.idealIntArraySize(2 * columns)];
+        staticLayout = new InnerStaticLayout(source,paint,fontMetricsInt,okFontMetricsInt,fitFontMetricsInt,width/2);
     }
 
-    private void generate(int width){
-
+    public boolean outputLine(){
+        return outputLine(outerWidth);
     }
 
-    public void outputLine(){
-        outputLine(outerWidth);
-    }
-
-    public void outputLine(int outerWidth){
+    public boolean outputLine(int outerWidth){
         CharSequence source = getText();
-        if(null==source || here >= source.length()){
-            return;
+        if(null==source || layoutState.here >= source.length()){
+            return false;
         }
         //The first time or we out of the buffer data.
         TextPaint paint = getPaint();
         Paint.FontMetricsInt fm = fontMetricsInt;
+        Paint.FontMetricsInt okFm = okFontMetricsInt;
+        Paint.FontMetricsInt fitFm = fitFontMetricsInt;
         Spanned spanned = null;
         if (source instanceof Spanned)
             spanned = (Spanned) source;
@@ -71,29 +76,26 @@ public class DivisionStaticLayout extends DivisionLayout {
             top = getLineTop(lineCount);
         }
         float w = 0;
-        int offset = here;
-        boolean workComplete=false;
+        int here = layoutState.here;
         int width = outerWidth;
-        int fitAscent = 0, fitDescent = 0, fitTop = 0, fitBottom = 0;
-        int okAscent = 0, okDescent = 0, okTop = 0, okBottom = 0;
-        while(!workComplete && w <= outerWidth) {
-            if (offset >= end) {
-                start = offset;
+        while(w <= outerWidth) {
+            if (here >= layoutState.end) {
+                layoutState.start = here;
                 expandTextBuffer();
             }
             int next;
             if (spanned == null)
-                next = end;
+                next = layoutState.end;
             else
-                next = spanned.nextSpanTransition(offset, end, MetricAffectingSpan.class);
+                next = spanned.nextSpanTransition(here, layoutState.end, MetricAffectingSpan.class);
 
             if (spanned == null) {
-                paint.getTextWidths(source, start, next, widths);
+                paint.getTextWidths(source, layoutState.start, next, widths);
                 paint.getFontMetricsInt(fm);
             } else if(null!=spanned){
-                start = offset;
+                layoutState.start = here;
                 workPaint.baselineShift = 0;
-                Styled.getTextWidths(paint, workPaint, spanned, offset, next, widths, fm);
+                Styled.getTextWidths(paint, workPaint, spanned, here, next, widths, fm);
                 if (workPaint.baselineShift < 0) {
                     fm.ascent += workPaint.baselineShift;
                     fm.top += workPaint.baselineShift;
@@ -102,78 +104,88 @@ public class DivisionStaticLayout extends DivisionLayout {
                     fm.bottom += workPaint.baselineShift;
                 }
             }
-            int fmTop = fm.top;
-            int fmBottom = fm.bottom;
-            int fmAscent = fm.ascent;
-            int fmDescent = fm.descent;
-            for (;offset < next; offset++) {
-                char c = source.charAt(offset);
-
-
-                if('\n' != c){
-                    w += widths[offset - start];
-                }
-                if (w <= width) {
-                    fit = offset + 1;
-                    if (fmTop < fitTop)
-                        fitTop = fmTop;
-                    if (fmAscent < fitAscent)
-                        fitAscent = fmAscent;
-                    if (fmDescent > fitDescent)
-                        fitDescent = fmDescent;
-                    if (fmBottom > fitBottom)
-                        fitBottom = fmBottom;
-                    if (c == ' ' || c == '\t' ||
-                            ((c == '.' || c == ',' || c == ':' || c == ';') &&
-                                    (offset - 1 < here || !Character.isDigit(source.charAt(offset - 1))) &&
-                                    (offset + 1 >= next || !Character.isDigit(source.charAt(offset + 1)))) ||
-                            ((c == '/' || c == '-') && (offset + 1 >= next || !Character.isDigit(source.charAt(offset + 1 - start))))) {
-                        ok = offset + 1;
-                        if (fitTop < okTop)
-                            okTop = fitTop;
-                        if (fitAscent < okAscent)
-                            okAscent = fitAscent;
-                        if (fitDescent > okDescent)
-                            okDescent = fitDescent;
-                        if (fitBottom > okBottom)
-                            okBottom = fitBottom;
-                    }
+            for (;here < next; here++) {
+                char c = source.charAt(here);
+                float textWidth = widths[here - layoutState.start];
+                if(here > 20){
+                    staticLayout.outputLine(layoutState,c,textWidth,here);
                 } else {
-                    if (ok != here) {
-                        top = out(here, ok, okAscent, okDescent, top);
-                        here = ok;
-                    } else if (fit != here) {
-                        top = out(here, fit, fitAscent, fitDescent, top);
-                        here = fit;
+                    if('\n' != c){
+                        w += textWidth;
                     }
-                    end = ok = here;
-                    fitAscent = fitDescent = 0;
-                    workComplete = true;
-                    break;
-                }
-                if('\n' == c || offset ==source.length()-1){
-                    out(here, fit, fitAscent, fitDescent, top);
-                    end = here = ok = fit;
-                    workComplete = true;
-                    break;
+                    if(layoutTextInternal(source,top,here,next,c,w)){
+                        return true;
+                    }
                 }
             }
         }
+        return false;
+    }
 
+    private boolean layoutTextInternal(CharSequence source,int top,int here,int next,char c,float w){
+        Paint.FontMetricsInt fm = fontMetricsInt;
+        Paint.FontMetricsInt okFm = okFontMetricsInt;
+        Paint.FontMetricsInt fitFm = fitFontMetricsInt;
+        if (w <= outerWidth) {
+            layoutState.fit = here + 1;
+            if (fm.top < fitFm.top)
+                fitFm.top = fm.top;
+            if (fm.ascent < fitFm.ascent)
+                fitFm.ascent = fm.ascent;
+            if (fm.descent > fitFm.descent)
+                fitFm.descent = fm.descent;
+            if (fm.bottom > fitFm.bottom)
+                fitFm.bottom = fm.bottom;
+            if (c == ' ' || c == '\t' ||
+                    ((c == '.' || c == ',' || c == ':' || c == ';') &&
+                            (here - 1 < layoutState.here || !Character.isDigit(source.charAt(here - 1))) &&
+                            (here + 1 >= next || !Character.isDigit(source.charAt(here + 1)))) ||
+                    ((c == '/' || c == '-') && (here + 1 >= next || !Character.isDigit(source.charAt(here + 1 - layoutState.start))))) {
+                layoutState.ok = here + 1;
+                if (fitFm.top < okFm.top)
+                    okFm.top = fitFm.top;
+                if (fitFm.ascent < okFm.ascent)
+                    okFm.ascent = fitFm.ascent;
+                if (fitFm.descent > okFm.descent)
+                    okFm.descent = fitFm.descent;
+                if (fitFm.bottom > okFm.bottom)
+                    okFm.bottom = fitFm.bottom;
+            }
+        } else {
+            if (layoutState.ok != layoutState.here) {
+                out(layoutState.here, layoutState.ok, okFm.ascent, okFm.descent, top);
+                layoutState.here = layoutState.ok;
+            } else if (layoutState.fit != layoutState.here) {
+                out(layoutState.here, layoutState.fit, fitFm.ascent, fitFm.descent, top);
+                layoutState.here = layoutState.fit;
+            }
+            layoutState.end = layoutState.ok = layoutState.here;
+            okFm.top=okFm.ascent=okFm.descent=okFm.bottom=0;
+            fitFm.top=fitFm.ascent=fitFm.descent=fitFm.bottom=0;
+            return true;
+        }
+        if('\n' == c || here ==source.length()-1){
+            out(layoutState.here, layoutState.fit, fitFm.ascent, fitFm.descent, top);
+            okFm.top=okFm.ascent=okFm.descent=okFm.bottom=0;
+            fitFm.top=fitFm.ascent=fitFm.descent=fitFm.bottom=0;
+            layoutState.end = layoutState.here = layoutState.ok = layoutState.fit;
+            return true;
+        }
+        return false;
     }
 
     private void expandTextBuffer(){
         CharSequence source = getText();
-        end = start + BUFFER_SIZE;
-        if(end > source.length()){
-            end = source.length();
+        layoutState.end = layoutState.start + BUFFER_SIZE;
+        if(layoutState.end > source.length()){
+            layoutState.end = source.length();
         }
-        int bufferSize = end - start;
+        int bufferSize = layoutState.end - layoutState.start;
         if (widths == null) {
             this.widths = new float[ArrayUtils.idealIntArraySize((bufferSize + 1) * 2)];
         }
-        if ((end - start) * 2 > widths.length) {
-            widths = new float[ArrayUtils.idealIntArraySize((end - start) * 2)];
+        if ((layoutState.end - layoutState.start) * 2 > widths.length) {
+            widths = new float[ArrayUtils.idealIntArraySize((layoutState.end - layoutState.start) * 2)];
         }
     }
 
@@ -203,6 +215,11 @@ public class DivisionStaticLayout extends DivisionLayout {
         return v;
     }
 
+    @Override
+    public int getHeight() {
+        int height = super.getHeight();
+        return height+staticLayout.getHeight();
+    }
 
     public int getLineCount() {
         return lineCount;
@@ -218,6 +235,18 @@ public class DivisionStaticLayout extends DivisionLayout {
 
     public int getLineStart(int line) {
         return lines[columns * line + START] & START_MASK;
+    }
+
+    /**
+     * Draw this Layout on the specified Canvas.
+     */
+    public void draw(Canvas c) {
+        super.draw(c);
+        c.save();
+        int height = super.getHeight();
+        c.translate(0,height);
+        staticLayout.draw(c);
+        c.restore();
     }
 
 }

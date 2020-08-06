@@ -22,31 +22,37 @@ public class ProducerAndConsumer {
         //All the operation about producer.
         final int producerSize=7;
         final AtomicInteger produceCounter=new AtomicInteger();
-        ExecutorService producerExecutorService = Executors.newFixedThreadPool(producerSize);
-        List<Producer> producerList=new ArrayList<>(producerSize);
+        final ExecutorService producerExecutorService = Executors.newFixedThreadPool(producerSize);
+        final List<Producer> producerList=new ArrayList<>(producerSize);
         for(int i=0;i<producerSize;i++){
             producerList.add(new Producer(lock,produceCondition,consumeCondition, baskets,produceCounter));
         }
-        Executors.newSingleThreadExecutor().execute(()->{
-            for(int i=0;i<producerSize;i++){
-                Producer producer = producerList.get(i);
-                producerExecutorService.execute(producer);
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                for(int i=0;i<producerSize;i++){
+                    Producer producer = producerList.get(i);
+                    producerExecutorService.execute(producer);
+                }
             }
         });
 
         //All the operation about consumer.
         final int consumerSize=3;
         final AtomicInteger consumeCounter=new AtomicInteger();
-        ExecutorService consumerExecutorService = Executors.newFixedThreadPool(consumerSize);
-        List<Consumer> consumerList=new ArrayList<>(producerSize);
+        final ExecutorService consumerExecutorService = Executors.newFixedThreadPool(consumerSize);
+        final List<Consumer> consumerList=new ArrayList<>(producerSize);
         for(int i=0;i<consumerSize;i++){
             consumerList.add(new Consumer(lock,produceCondition,consumeCondition, baskets,consumeCounter));
         }
 
-        Executors.newSingleThreadExecutor().execute(()->{
-            for(int i=0;i<consumerSize;i++){
-                Consumer consumer = consumerList.get(i);
-                consumerExecutorService.execute(consumer);
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                for(int i=0;i<consumerSize;i++){
+                    Consumer consumer = consumerList.get(i);
+                    consumerExecutorService.execute(consumer);
+                }
             }
         });
     }

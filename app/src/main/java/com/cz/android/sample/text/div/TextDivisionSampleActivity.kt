@@ -8,7 +8,9 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.Spannable
 import androidx.appcompat.app.AppCompatActivity
+import com.cz.android.nested.NestedScrollView
 import com.cz.android.sample.R
+import com.cz.android.text.layout.div.DivisionStaticLayout
 import com.cz.android.text.span.*
 import com.cz.android.text.spannable.SpannableString
 import kotlinx.android.synthetic.main.activity_text_division_sample.*
@@ -19,6 +21,15 @@ class TextDivisionSampleActivity : AppCompatActivity() {
         setContentView(R.layout.activity_text_division_sample)
         val spannableString = getSpannableString()
         text1.setText(spannableString)
+
+        outputButton.setOnClickListener {
+            val layout = text1.getLayout()
+            if(null!=layout && layout is DivisionStaticLayout){
+                layout.outputLine()
+                text1.requestLayout()
+                scrollView.arrowScroll(NestedScrollView.FOCUS_DOWN)
+            }
+        }
     }
 
     private fun getSpannableString(): SpannableString {

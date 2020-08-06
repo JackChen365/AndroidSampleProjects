@@ -45,6 +45,8 @@ class SimpleRichTextView @JvmOverloads constructor(
          */
         private var charArray:CharArray?=null
 
+        private var pendingTextDivisionList:MutableList<TextDivision>?=null
+
 
         init {
                 //接收touch事件
@@ -63,16 +65,29 @@ class SimpleRichTextView @JvmOverloads constructor(
         }
 
         fun addTextDivision(textDivision: TextDivision){
-
+                if(null==layout){
+                        if(null==pendingTextDivisionList){
+                                pendingTextDivisionList= mutableListOf()
+                        }
+                        pendingTextDivisionList?.add(textDivision)
+                } else {
+                        layout?.addTextDivision(textDivision)
+                }
         }
 
         fun removeTextDivision(textDivision: TextDivision){
-
+                if(null!=layout){
+                        layout?.removeTextDivision(textDivision)
+                }
         }
 
 
         fun getLineCount():Int{
                 return layout?.lineCount?:0
+        }
+
+        fun getLayout():DivisionLayout?{
+                return layout
         }
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -84,10 +99,12 @@ class SimpleRichTextView @JvmOverloads constructor(
                                         textPaint,
                                         measuredWidth - paddingLeft - paddingRight
                                 )
+                                pendingTextDivisionList?.forEach { textDivision->
+                                        layout?.addTextDivision(textDivision)
+                                }
                         }
                         //添加调试信息
                         Log.e(TAG,"初始化Layout时长:$measureTimeMillis\n")
-
                 }
                 val layoutHeight=layout?.height?:0
                 setMeasuredDimension(measuredWidth,paddingTop+layoutHeight+paddingBottom)

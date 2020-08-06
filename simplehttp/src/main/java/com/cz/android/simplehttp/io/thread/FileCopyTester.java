@@ -103,7 +103,7 @@ public class FileCopyTester {
         int start=0;
         CountDownLatch countDownLatch=new CountDownLatch(availableProcessors);
         try {
-            ThreadPoolExecutor executorService = new ThreadPoolExecutor(availableProcessors, availableProcessors, 1L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+            ThreadPoolExecutor executorService = new ThreadPoolExecutor(availableProcessors, availableProcessors, 1L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
             executorService.allowCoreThreadTimeOut(true);
             for(int i=0;i<availableProcessors;i++){
                 FileCopyWorker fileCopyWorker;
@@ -138,7 +138,7 @@ public class FileCopyTester {
         int start=0;
         CountDownLatch countDownLatch=new CountDownLatch(availableProcessors);
         try {
-            ThreadPoolExecutor executorService = new ThreadPoolExecutor(availableProcessors, availableProcessors, 1L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+            ThreadPoolExecutor executorService = new ThreadPoolExecutor(availableProcessors, availableProcessors, 1L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
             executorService.allowCoreThreadTimeOut(true);
             for(int i=0;i<availableProcessors;i++){
                 NIOFileTransferWorker fileCopyWorker;

@@ -1,5 +1,7 @@
 package com.cz.android.text.layout.div;
 
+import androidx.annotation.NonNull;
+
 import com.cz.android.text.layout.Layout;
 
 /**
@@ -9,6 +11,9 @@ import com.cz.android.text.layout.Layout;
  */
 public interface TextDivision {
 
-    int apply(Layout layout, int line, int offset, int lineOffset);
+    boolean consumeText(@NonNull Layout layout,int offset,int line,int lineOffset);
 
+    void onMeasureText(@NonNull Layout layout,int width,float letterWidth,int offset,int line,int lineOffset);
+
+    void onDrawText(@NonNull Layout layout,int offset,int line,int lineOffset);
 }
