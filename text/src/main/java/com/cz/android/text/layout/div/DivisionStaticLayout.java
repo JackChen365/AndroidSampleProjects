@@ -6,7 +6,6 @@ import android.text.Spanned;
 import android.text.TextPaint;
 
 import com.cz.android.text.Styled;
-import com.cz.android.text.layout.Layout;
 import com.cz.android.text.style.MetricAffectingSpan;
 import com.cz.android.text.utils.ArrayUtils;
 
@@ -16,11 +15,13 @@ import com.cz.android.text.utils.ArrayUtils;
  * @email bingo110@126.com
  */
 public class DivisionStaticLayout extends DivisionLayout {
-    private static final int BUFFER_SIZE =100;
+    private static final int BUFFER_SIZE=100;
     private static final int COLUMNS_NORMAL = 5;
     private static final int START = 0;
     private static final int TOP = 1;
     private static final int DESCENT = 2;
+    private static final int LEFT = 3;//文本起始绘制位置
+    private static final int BOTTOM=4;//文本底部位置,因为存在一行内,多行信息
     private static final int START_MASK = 0x1FFFFFFF;
     private int outerWidth;
 
@@ -77,7 +78,6 @@ public class DivisionStaticLayout extends DivisionLayout {
         }
         float w = 0;
         int here = layoutState.here;
-        int width = outerWidth;
         while(w <= outerWidth) {
             if (here >= layoutState.end) {
                 layoutState.start = here;
@@ -153,10 +153,10 @@ public class DivisionStaticLayout extends DivisionLayout {
             }
         } else {
             if (layoutState.ok != layoutState.here) {
-                out(layoutState.here, layoutState.ok, okFm.ascent, okFm.descent, top);
+                out(layoutState.here, layoutState.ok, okFm.ascent, okFm.descent,0, top);
                 layoutState.here = layoutState.ok;
             } else if (layoutState.fit != layoutState.here) {
-                out(layoutState.here, layoutState.fit, fitFm.ascent, fitFm.descent, top);
+                out(layoutState.here, layoutState.fit, fitFm.ascent, fitFm.descent,0, top);
                 layoutState.here = layoutState.fit;
             }
             layoutState.end = layoutState.ok = layoutState.here;
@@ -165,7 +165,7 @@ public class DivisionStaticLayout extends DivisionLayout {
             return true;
         }
         if('\n' == c || here ==source.length()-1){
-            out(layoutState.here, layoutState.fit, fitFm.ascent, fitFm.descent, top);
+            out(layoutState.here, layoutState.fit, fitFm.ascent, fitFm.descent,0, top);
             okFm.top=okFm.ascent=okFm.descent=okFm.bottom=0;
             fitFm.top=fitFm.ascent=fitFm.descent=fitFm.bottom=0;
             layoutState.end = layoutState.here = layoutState.ok = layoutState.fit;
@@ -189,7 +189,7 @@ public class DivisionStaticLayout extends DivisionLayout {
         }
     }
 
-    private int out( int start, int end, int above, int below,int v) {
+    private void out(int start, int end, int above, int below, float x, float v) {
         int j = lineCount;
         int off = j * columns;
         int want = off + columns + TOP;
@@ -202,17 +202,18 @@ public class DivisionStaticLayout extends DivisionLayout {
             this.lines = grow;
             lines = grow;
         }
-        int extra=0;
-
+        //根据不同模式,确定位置
         lines[off + START] = start;
-        lines[off + TOP] = v;
-        lines[off + DESCENT] = below + extra;
+        lines[off + TOP] = (int)v;
+        lines[off + DESCENT] = below;
 
-        v += (below - above) + extra;
+        float lineHeight= (below - above);
+        lines[off + LEFT] = (int) x;
+        lines[off + BOTTOM] = (int) (v+lineHeight);
+
         lines[off + columns + START] = end;
-        lines[off + columns + TOP] = v;
+        lines[off + columns + TOP] = (int)(v+lineHeight);
         lineCount++;
-        return v;
     }
 
     @Override
