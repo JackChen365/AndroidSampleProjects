@@ -18,7 +18,7 @@ import com.cz.android.text.utils.ArrayUtils;
  */
 public class DivisionStaticLayout extends DivisionLayout {
     private static final String TAG="DivisionStaticLayout";
-    private static final int BUFFER_SIZE=100;
+    private static final int BUFFER_SIZE=1;
     private static final int COLUMNS_NORMAL = 5;
     private static final int START = 0;
     private static final int TOP = 1;
@@ -35,7 +35,8 @@ public class DivisionStaticLayout extends DivisionLayout {
     private float[] widths;
 
     private TextLayoutState layoutState;
-    private InnerStaticLayout staticLayout;
+    private InnerStaticLayout staticLayout1;
+    private InnerStaticLayout staticLayout2;
 
     private Paint.FontMetricsInt fitFontMetricsInt;
     private Paint.FontMetricsInt okFontMetricsInt;
@@ -54,7 +55,8 @@ public class DivisionStaticLayout extends DivisionLayout {
         fitFontMetricsInt = new Paint.FontMetricsInt();
         okFontMetricsInt = new Paint.FontMetricsInt();
         lines = new int[ArrayUtils.idealIntArraySize(2 * columns)];
-        staticLayout = new InnerStaticLayout(source,paint,fontMetricsInt,okFontMetricsInt,fitFontMetricsInt,width/2);
+        staticLayout1 = new InnerStaticLayout(source,paint,fontMetricsInt,okFontMetricsInt,fitFontMetricsInt,width/2);
+        staticLayout2 = new InnerStaticLayout(source,paint,fontMetricsInt,okFontMetricsInt,fitFontMetricsInt,width/2);
     }
 
     public boolean outputLine(){
@@ -110,8 +112,14 @@ public class DivisionStaticLayout extends DivisionLayout {
             for (;here < next; here++) {
                 char c = source.charAt(here);
                 float textWidth = widths[here - layoutState.start];
-                if(staticLayout.outputLine(layoutState,c,textWidth,here,next)){
-                    return true;
+                if(3>=staticLayout1.getLineCount()){
+                    if(staticLayout1.outputLine(layoutState,c,textWidth,here,next)){
+                        return true;
+                    }
+                } else {
+                    if(staticLayout2.outputLine(layoutState,c,textWidth,here,next)){
+                        return true;
+                    }
                 }
 //                if('\n' != c){
 //                    w += textWidth;
@@ -238,7 +246,10 @@ public class DivisionStaticLayout extends DivisionLayout {
     @Override
     public int getHeight() {
         int height = super.getHeight();
-        return height+staticLayout.getHeight();
+        height+=staticLayout1.getHeight();
+        height+=100;
+        height+=staticLayout2.getHeight();
+        return height;
     }
 
     public int getLineCount() {
@@ -265,7 +276,9 @@ public class DivisionStaticLayout extends DivisionLayout {
         c.save();
         int height = super.getHeight();
         c.translate(0,height);
-        staticLayout.draw(c);
+        staticLayout1.draw(c);
+        c.translate(0,staticLayout1.getHeight()+100);
+        staticLayout2.draw(c);
         c.restore();
     }
 
