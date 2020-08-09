@@ -44,3 +44,4 @@ Java_com_cz_android_cpp_sample_basic_NativeMethodInvokeSampleActivity_nCallGetIn
                                                                    jlong method_id) {
     return env->CallIntMethod(target,(jmethodID)method_id);
 }
+

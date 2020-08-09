@@ -4,9 +4,11 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.text.Spanned;
 import android.text.TextPaint;
+import android.util.Log;
 
 import com.cz.android.text.Styled;
 import com.cz.android.text.style.MetricAffectingSpan;
+import com.cz.android.text.style.ReplacementSpan;
 import com.cz.android.text.utils.ArrayUtils;
 
 /**
@@ -15,6 +17,7 @@ import com.cz.android.text.utils.ArrayUtils;
  * @email bingo110@126.com
  */
 public class DivisionStaticLayout extends DivisionLayout {
+    private static final String TAG="DivisionStaticLayout";
     private static final int BUFFER_SIZE=100;
     private static final int COLUMNS_NORMAL = 5;
     private static final int START = 0;
@@ -107,20 +110,36 @@ public class DivisionStaticLayout extends DivisionLayout {
             for (;here < next; here++) {
                 char c = source.charAt(here);
                 float textWidth = widths[here - layoutState.start];
-                if(here > 20){
-                    staticLayout.outputLine(layoutState,c,textWidth,here);
-                } else {
-                    if('\n' != c){
-                        w += textWidth;
-                    }
-                    if(layoutTextInternal(source,top,here,next,c,w)){
-                        return true;
-                    }
+                if(staticLayout.outputLine(layoutState,c,textWidth,here,next)){
+                    return true;
                 }
+//                if('\n' != c){
+//                    w += textWidth;
+//                }
+//                if(layoutTextInternal(source,top,here,next,c,w)){
+//                    return true;
+//                }
             }
         }
         return false;
     }
+
+    /**
+     * 查找ReplacementSpan
+     * @param start
+     * @param end
+     * @return
+     */
+    private ReplacementSpan findReplacementSpan(int start, int end){
+        ReplacementSpan replacementSpan = null;
+        ReplacementSpan[] replacementSpans = getSpans(start,end, ReplacementSpan.class);
+        if(null != replacementSpans && 0 < replacementSpans.length){
+            //检测换行规则,如果存在重叠的ReplaceSpan其实目前算法只取最后一个
+            replacementSpan = replacementSpans[replacementSpans.length - 1];
+        }
+        return replacementSpan;
+    }
+
 
     private boolean layoutTextInternal(CharSequence source,int top,int here,int next,char c,float w){
         Paint.FontMetricsInt fm = fontMetricsInt;

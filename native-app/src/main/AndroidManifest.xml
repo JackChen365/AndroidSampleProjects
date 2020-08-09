@@ -9,7 +9,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".basic.NativeMethodInvokeSampleActivity"></activity>
+        <activity android:name=".basic.NativeFileSearchActivity"></activity>
+        <activity android:name=".basic.NativeMethodInvokeSampleActivity" />
         <activity android:name=".basic.HelloNativeSampleActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
