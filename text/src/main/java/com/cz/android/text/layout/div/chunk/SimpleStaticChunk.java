@@ -1,14 +1,11 @@
-package com.cz.android.text.layout.div;
+package com.cz.android.text.layout.div.chunk;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.text.Spanned;
-import android.text.TextPaint;
 
-import com.cz.android.text.Styled;
-import com.cz.android.text.style.MetricAffectingSpan;
+import com.cz.android.text.layout.div.TextLayoutState;
 import com.cz.android.text.utils.ArrayUtils;
 
 /**
@@ -16,41 +13,7 @@ import com.cz.android.text.utils.ArrayUtils;
  * @date 2020/8/5 10:24 AM
  * @email bingo110@126.com
  */
-public class InnerStaticLayout extends DivisionLayout {
-    /**
-     * 跟随内容
-     */
-    private static final int FLOW_FLAG=0x01;
-    /**
-     * 断行标志
-     */
-    private static final int BREAK_LINE_FLAG = 0x02;
-    /**
-     * 检测是否需要断行,意思为超出内容则断,不超出不断
-     */
-    private static final int CONSIDER_BREAK_LINE_FLAG = 0x04;
-    /**
-     * 当前元素独占一行
-     */
-    private static final int SINGLE_LINE_FLAG = 0x08;
-
-    /**
-     * 遇到此控件自动换行
-     */
-    public static final int BREAK_LINE=BREAK_LINE_FLAG;
-    /**
-     * 标志span按flow摆放,但如果超出尺寸 ,则放到下一行
-     */
-    public static final int CONSIDER_BREAK_LINE=FLOW_FLAG | CONSIDER_BREAK_LINE_FLAG;
-    /**
-     * 独占一行
-     */
-    public static final int SINGLE_LINE=BREAK_LINE_FLAG | SINGLE_LINE_FLAG;
-    /**
-     * 跟随内容向右流动
-     */
-    public static final int FLOW=FLOW_FLAG;
-
+public class SimpleStaticChunk extends TextChunk {
     private static final int COLUMNS_NORMAL = 5;
     private static final int START = 0;
     private static final int TOP = 1;
@@ -58,9 +21,6 @@ public class InnerStaticLayout extends DivisionLayout {
     private static final int LEFT = 3;//文本起始绘制位置
     private static final int BOTTOM=4;//文本底部位置,因为存在一行内,多行信息
     private static final int START_MASK = 0x1FFFFFFF;
-    private Paint.FontMetricsInt fitFontMetricsInt;
-    private Paint.FontMetricsInt okFontMetricsInt;
-    private Paint.FontMetricsInt fontMetricsInt;
 
     private int layoutOffset;
     private int outerWidth;
@@ -68,29 +28,36 @@ public class InnerStaticLayout extends DivisionLayout {
     private int lineCount;
     private int columns;
     private int[] lines;
+
     /**
-     * @param source      操作文本
-     * @param paint      绘制paint
      * @param width      排版宽
      */
-    public InnerStaticLayout(CharSequence source, TextPaint paint,Paint.FontMetricsInt fm,Paint.FontMetricsInt okFm,Paint.FontMetricsInt fitFm, int width) {
-        super(source, paint, width, 0);
+    public SimpleStaticChunk(int width,int line,int lineOffset) {
+        super(width, 0,line,lineOffset,-1);
         columns = COLUMNS_NORMAL;
         outerWidth = width;
         lines = new int[ArrayUtils.idealIntArraySize(2 * columns)];
-        fontMetricsInt=fm;
-        okFontMetricsInt=okFm;
-        fitFontMetricsInt=fitFm;
     }
 
-    public boolean outputLine(TextLayoutState layoutState,char c,float textWidth,int here,int next){
+    /**
+     * @param width      排版宽
+     */
+    public SimpleStaticChunk(int width,int offset) {
+        super(width, 0,-1,-1,offset);
+        columns = COLUMNS_NORMAL;
+        outerWidth = width;
+        lines = new int[ArrayUtils.idealIntArraySize(2 * columns)];
+    }
+
+    @Override
+    public boolean onTextLayout(TextLayoutState layoutState, float w, char c, int here, int next) {
         //The first time or we out of the buffer data.
         CharSequence source = getText();
         Paint.FontMetricsInt fm = fontMetricsInt;
         Paint.FontMetricsInt okFm = okFontMetricsInt;
         Paint.FontMetricsInt fitFm = fitFontMetricsInt;
         if('\n' != c){
-            layoutOffset += textWidth;
+            layoutOffset += w;
         }
         if (layoutOffset <= outerWidth) {
             layoutState.fit = here + 1;
@@ -170,43 +137,6 @@ public class InnerStaticLayout extends DivisionLayout {
         lines[off + columns + TOP] = (int)(v+lineHeight);
         lineCount++;
     }
-
-    /**
-     * If this layout is in flow mode. this mean it won't break the line and if the content's size out the screen. It will still in this line.
-     */
-    public static boolean isFlow(int layoutMode){
-        return 0!=(FLOW_FLAG & layoutMode);
-    }
-
-    /**
-     * Check if the layout should break the line. if the this layout shows up.
-     */
-    public static boolean isBreakLine(int layoutMode){
-        return 0!=(BREAK_LINE_FLAG & layoutMode);
-    }
-
-    /**
-     * Check if the layout is in single line mode.
-     */
-    public static boolean isSingleLine(int layoutMode){
-        return 0!=(SINGLE_LINE_FLAG & layoutMode);
-    }
-
-    /**
-     * If the content's side out of the screen. It will break the line automatically.
-     */
-    public static boolean considerBreakLine(int layoutMode){
-        return 0!=(CONSIDER_BREAK_LINE_FLAG & layoutMode);
-    }
-
-    /**
-     * 获得元素排版模式
-     * @return
-     */
-    public int getSpanLayoutMode(){
-        return FLOW;
-    }
-
     private int getLayoutTop(){
         int layoutTop = 0;
         int lineCount = getLineCount();

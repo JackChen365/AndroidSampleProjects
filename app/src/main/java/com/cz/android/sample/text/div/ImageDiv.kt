@@ -12,7 +12,7 @@ import com.cz.android.text.layout.div.TextDivision
  * @date 2020/8/6 5:34 PM
  * @email bingo110@126.com
  */
-class ImageDiv : AppCompatImageView, TextDivision {
+class ImageDiv : AppCompatImageView {
     companion object{
         private const val TAG="ImageDiv"
     }

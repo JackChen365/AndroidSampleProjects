@@ -12,7 +12,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewGroup
 import com.cz.android.sample.R
-import com.cz.android.text.layout.div.DivisionLayout
+import com.cz.android.text.layout.div.TextLayout
 import com.cz.android.text.layout.div.DivisionStaticLayout
 import com.cz.android.text.layout.div.TextDivision
 import kotlin.system.measureTimeMillis
@@ -31,7 +31,7 @@ class SimpleRichTextView @JvmOverloads constructor(
         /**
          * 文本排版layout对象
          */
-        private var layout: DivisionLayout?=null
+        private var layout: TextLayout?=null
         /**
          * 画笔对象
          */
@@ -86,7 +86,7 @@ class SimpleRichTextView @JvmOverloads constructor(
                 return layout?.lineCount?:0
         }
 
-        fun getLayout():DivisionLayout?{
+        fun getLayout(): TextLayout?{
                 return layout
         }
 

@@ -4,19 +4,22 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.text.Spanned;
 import android.text.TextPaint;
-import android.util.Log;
 
 import com.cz.android.text.Styled;
+import com.cz.android.text.layout.div.chunk.SimpleStaticChunk;
+import com.cz.android.text.layout.div.chunk.TextChunk;
 import com.cz.android.text.style.MetricAffectingSpan;
 import com.cz.android.text.style.ReplacementSpan;
 import com.cz.android.text.utils.ArrayUtils;
+
+import java.util.List;
 
 /**
  * @author Created by cz
  * @date 2020/8/5 10:24 AM
  * @email bingo110@126.com
  */
-public class DivisionStaticLayout extends DivisionLayout {
+public class DivisionStaticLayout extends TextLayout {
     private static final String TAG="DivisionStaticLayout";
     private static final int BUFFER_SIZE=1;
     private static final int COLUMNS_NORMAL = 5;
@@ -35,12 +38,6 @@ public class DivisionStaticLayout extends DivisionLayout {
     private float[] widths;
 
     private TextLayoutState layoutState;
-    private InnerStaticLayout staticLayout1;
-    private InnerStaticLayout staticLayout2;
-
-    private Paint.FontMetricsInt fitFontMetricsInt;
-    private Paint.FontMetricsInt okFontMetricsInt;
-    private Paint.FontMetricsInt fontMetricsInt;
     /**
      * @param source      操作文本
      * @param paint      绘制paint
@@ -51,28 +48,20 @@ public class DivisionStaticLayout extends DivisionLayout {
         columns = COLUMNS_NORMAL;
         outerWidth = width;
         layoutState=new TextLayoutState();
-        fontMetricsInt = new Paint.FontMetricsInt();
-        fitFontMetricsInt = new Paint.FontMetricsInt();
-        okFontMetricsInt = new Paint.FontMetricsInt();
         lines = new int[ArrayUtils.idealIntArraySize(2 * columns)];
-        staticLayout1 = new InnerStaticLayout(source,paint,fontMetricsInt,okFontMetricsInt,fitFontMetricsInt,width/2);
-        staticLayout2 = new InnerStaticLayout(source,paint,fontMetricsInt,okFontMetricsInt,fitFontMetricsInt,width/2);
     }
 
-    public boolean outputLine(){
-        return outputLine(outerWidth);
+    public void outputLine(){
+        outputLine(outerWidth);
     }
 
-    public boolean outputLine(int outerWidth){
+    public void outputLine(int outerWidth){
         CharSequence source = getText();
         if(null==source || layoutState.here >= source.length()){
-            return false;
+            return;
         }
         //The first time or we out of the buffer data.
         TextPaint paint = getPaint();
-        Paint.FontMetricsInt fm = fontMetricsInt;
-        Paint.FontMetricsInt okFm = okFontMetricsInt;
-        Paint.FontMetricsInt fitFm = fitFontMetricsInt;
         Spanned spanned = null;
         if (source instanceof Spanned)
             spanned = (Spanned) source;
@@ -96,40 +85,36 @@ public class DivisionStaticLayout extends DivisionLayout {
 
             if (spanned == null) {
                 paint.getTextWidths(source, layoutState.start, next, widths);
-                paint.getFontMetricsInt(fm);
+                paint.getFontMetricsInt(fontMetricsInt);
             } else if(null!=spanned){
                 layoutState.start = here;
                 workPaint.baselineShift = 0;
-                Styled.getTextWidths(paint, workPaint, spanned, here, next, widths, fm);
+                Styled.getTextWidths(paint, workPaint, spanned, here, next, widths, fontMetricsInt);
                 if (workPaint.baselineShift < 0) {
-                    fm.ascent += workPaint.baselineShift;
-                    fm.top += workPaint.baselineShift;
+                    fontMetricsInt.ascent += workPaint.baselineShift;
+                    fontMetricsInt.top += workPaint.baselineShift;
                 } else {
-                    fm.descent += workPaint.baselineShift;
-                    fm.bottom += workPaint.baselineShift;
+                    fontMetricsInt.descent += workPaint.baselineShift;
+                    fontMetricsInt.bottom += workPaint.baselineShift;
                 }
             }
             for (;here < next; here++) {
                 char c = source.charAt(here);
                 float textWidth = widths[here - layoutState.start];
-                if(3>=staticLayout1.getLineCount()){
-                    if(staticLayout1.outputLine(layoutState,c,textWidth,here,next)){
-                        return true;
-                    }
-                } else {
-                    if(staticLayout2.outputLine(layoutState,c,textWidth,here,next)){
-                        return true;
-                    }
+                if('\n' != c){
+                    w += textWidth;
                 }
-//                if('\n' != c){
-//                    w += textWidth;
-//                }
-//                if(layoutTextInternal(source,top,here,next,c,w)){
-//                    return true;
-//                }
+
+                List<TextChunk> textChunkList = getTextChunkList();
+                if(null!=textChunkList){
+                    int line=lineCount;
+                    int lineOffset = here - layoutState.here;
+                }
+                if(layoutTextInternal(source,top,here,next,c,w)){
+                    return;
+                }
             }
         }
-        return false;
     }
 
     /**
@@ -243,15 +228,6 @@ public class DivisionStaticLayout extends DivisionLayout {
         lineCount++;
     }
 
-    @Override
-    public int getHeight() {
-        int height = super.getHeight();
-        height+=staticLayout1.getHeight();
-        height+=100;
-        height+=staticLayout2.getHeight();
-        return height;
-    }
-
     public int getLineCount() {
         return lineCount;
     }
@@ -267,19 +243,4 @@ public class DivisionStaticLayout extends DivisionLayout {
     public int getLineStart(int line) {
         return lines[columns * line + START] & START_MASK;
     }
-
-    /**
-     * Draw this Layout on the specified Canvas.
-     */
-    public void draw(Canvas c) {
-        super.draw(c);
-        c.save();
-        int height = super.getHeight();
-        c.translate(0,height);
-        staticLayout1.draw(c);
-        c.translate(0,staticLayout1.getHeight()+100);
-        staticLayout2.draw(c);
-        c.restore();
-    }
-
 }

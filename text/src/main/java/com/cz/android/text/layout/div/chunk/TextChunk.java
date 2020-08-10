@@ -1,17 +1,15 @@
-package com.cz.android.text.layout.div;
+package com.cz.android.text.layout.div.chunk;
 
 
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.Spanned;
 import android.text.TextPaint;
 
-import androidx.annotation.NonNull;
-
 import com.cz.android.text.Styled;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.cz.android.text.layout.div.TextLayout;
+import com.cz.android.text.layout.div.TextLayoutState;
 
 /**
  * 文本排版layout
@@ -20,31 +18,65 @@ import java.util.List;
  * 2. 实现断行策略抽离
  * 3. 实现span
  */
-public abstract class DivisionLayout {
-    private CharSequence text;
-    private TextPaint paint;
+public abstract class TextChunk {
+    /**
+     * 跟随内容
+     */
+    private static final int FLOW_FLAG=0x01;
+    /**
+     * 断行标志
+     */
+    private static final int BREAK_LINE_FLAG = 0x02;
+    /**
+     * 检测是否需要断行,意思为超出内容则断,不超出不断
+     */
+    private static final int CONSIDER_BREAK_LINE_FLAG = 0x04;
+    /**
+     * 当前元素独占一行
+     */
+    private static final int SINGLE_LINE_FLAG = 0x08;
+
+    /**
+     * 遇到此控件自动换行
+     */
+    public static final int BREAK_LINE=BREAK_LINE_FLAG;
+    /**
+     * 标志span按flow摆放,但如果超出尺寸 ,则放到下一行
+     */
+    public static final int CONSIDER_BREAK_LINE=FLOW_FLAG | CONSIDER_BREAK_LINE_FLAG;
+    /**
+     * 独占一行
+     */
+    public static final int SINGLE_LINE=BREAK_LINE_FLAG | SINGLE_LINE_FLAG;
+    /**
+     * 跟随内容向右流动
+     */
+    public static final int FLOW=FLOW_FLAG;
+    private static Rect tempRect = new Rect();
+
+    Paint.FontMetricsInt fitFontMetricsInt;
+    Paint.FontMetricsInt okFontMetricsInt;
+    Paint.FontMetricsInt fontMetricsInt;
     TextPaint workPaint;
+
+    private CharSequence text;
+    private TextAnchor textAnchor;
+    private TextPaint paint;
     private int width;
     private float spacingAdd;
-    private static Rect tempRect = new Rect();
     private Spanned spanned;
     private boolean spannedText;
-    private List<TextDivision> textDivisionList;
 
     /**
      *
-     * @param text 操作文本
-     * @param paint 绘制paint
      * @param width 排版宽
      * @param spacingAdd  行额外添加空间
      */
-    protected DivisionLayout(CharSequence text, TextPaint paint,
-                             int width, float spacingAdd) {
+    protected TextChunk(int width, float spacingAdd,int line,int lineOffset,int offset) {
         if (width < 0)
             throw new IllegalArgumentException("Layout: " + width + " < 0");
-        this.text = text;
-        this.paint = paint;
-        workPaint = new TextPaint();
+        this.textAnchor=new TextAnchor(line,lineOffset,offset);
+        this.workPaint = new TextPaint();
         this.width = width;
         this.spacingAdd = spacingAdd;
         if(text instanceof Spanned)
@@ -52,19 +84,79 @@ public abstract class DivisionLayout {
         spannedText = text instanceof Spanned;
     }
 
-    public void addTextDivision(@NonNull TextDivision textDivision){
-        if(null==textDivisionList){
-            textDivisionList=new ArrayList<>();
-        }
-        textDivisionList.add(textDivision);
+    public final void attachToTextLayout(TextLayout layout){
+        this.paint = layout.getPaint();
+        this.text = layout.getText();
+        this.fontMetricsInt =layout.getFontMetricsInt();
+        this.fitFontMetricsInt =layout.getFitFontMetricsInt();
+        this.okFontMetricsInt =layout.getOkFontMetricsInt();
+        onAttachToLayout(layout);
     }
 
-    public void removeTextDivision(@NonNull TextDivision textDivision){
-        if(null!=textDivisionList){
-            textDivisionList.remove(textDivision);
-        }
+    protected void onAttachToLayout(TextLayout layout){
     }
 
+    /**
+     * If this layout is in flow mode. this mean it won't break the line and if the content's size out the screen. It will still in this line.
+     */
+    public static boolean isFlow(int layoutMode){
+        return 0!=(FLOW_FLAG & layoutMode);
+    }
+
+    /**
+     * Check if the layout should break the line. if the this layout shows up.
+     */
+    public static boolean isBreakLine(int layoutMode){
+        return 0!=(BREAK_LINE_FLAG & layoutMode);
+    }
+
+    /**
+     * Check if the layout is in single line mode.
+     */
+    public static boolean isSingleLine(int layoutMode){
+        return 0!=(SINGLE_LINE_FLAG & layoutMode);
+    }
+
+    /**
+     * If the content's side out of the screen. It will break the line automatically.
+     */
+    public static boolean considerBreakLine(int layoutMode){
+        return 0!=(CONSIDER_BREAK_LINE_FLAG & layoutMode);
+    }
+
+    /**
+     * 获得元素排版模式
+     * @return
+     */
+    public int getSpanLayoutMode(){
+        return FLOW;
+    }
+
+    public Paint.FontMetricsInt getFitFontMetricsInt() {
+        return fitFontMetricsInt;
+    }
+
+    public Paint.FontMetricsInt getOkFontMetricsInt() {
+        return okFontMetricsInt;
+    }
+
+    public Paint.FontMetricsInt getFontMetricsInt() {
+        return fontMetricsInt;
+    }
+
+    public TextAnchor getTextAnchor() {
+        return textAnchor;
+    }
+
+    public boolean applyForPosition(int line,int lineOffset){
+        return false;
+    }
+
+    public boolean applyForPosition(int offset){
+        return false;
+    }
+
+    public abstract boolean onTextLayout(TextLayoutState layoutState,float w, char c, int here, int next);
 
     /**
      * 获得指定类型的span对象
