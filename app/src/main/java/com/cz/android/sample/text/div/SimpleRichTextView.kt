@@ -14,7 +14,6 @@ import android.view.ViewGroup
 import com.cz.android.sample.R
 import com.cz.android.text.layout.div.TextLayout
 import com.cz.android.text.layout.div.DivisionStaticLayout
-import com.cz.android.text.layout.div.TextDivision
 import kotlin.system.measureTimeMillis
 
 
@@ -45,8 +44,6 @@ class SimpleRichTextView @JvmOverloads constructor(
          */
         private var charArray:CharArray?=null
 
-        private var pendingTextDivisionList:MutableList<TextDivision>?=null
-
 
         init {
                 //接收touch事件
@@ -62,23 +59,6 @@ class SimpleRichTextView @JvmOverloads constructor(
         fun setText(text:CharSequence){
                 this.text=text
                 requestLayout()
-        }
-
-        fun addTextDivision(textDivision: TextDivision){
-                if(null==layout){
-                        if(null==pendingTextDivisionList){
-                                pendingTextDivisionList= mutableListOf()
-                        }
-                        pendingTextDivisionList?.add(textDivision)
-                } else {
-                        layout?.addTextDivision(textDivision)
-                }
-        }
-
-        fun removeTextDivision(textDivision: TextDivision){
-                if(null!=layout){
-                        layout?.removeTextDivision(textDivision)
-                }
         }
 
 
@@ -99,9 +79,6 @@ class SimpleRichTextView @JvmOverloads constructor(
                                         textPaint,
                                         measuredWidth - paddingLeft - paddingRight
                                 )
-                                pendingTextDivisionList?.forEach { textDivision->
-                                        layout?.addTextDivision(textDivision)
-                                }
                         }
                         //添加调试信息
                         Log.e(TAG,"初始化Layout时长:$measureTimeMillis\n")
