@@ -31,6 +31,12 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         file-search-lib.cpp)
 
+add_library( # Sets the name of the library.
+        native-course
+        # Sets the library as a shared library.
+        SHARED
+        # Provides a relative path to your source file(s).
+        course-native-lib.cpp)
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -52,4 +58,5 @@ target_link_libraries(native-lib ${log-lib} )
 target_link_libraries(file-search ${log-lib} )
 target_link_libraries(file-search ${stdc++fs})
 target_link_libraries(method-native-lib ${log-lib} )
+target_link_libraries(native-course ${log-lib})
 
