@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">NATIVE-APP</string>
+    <string name="hello_native_description">
+        Click the button: output1 will output a message from Native.\n
+        Click the button: output2 will output a message from Native but delayed two second.\n
+    </string>
+    <string name="method_invoke_description">
+        Click the button, You will see the performance difference between native method call and Java Inflect.
+    </string>
 </resources>

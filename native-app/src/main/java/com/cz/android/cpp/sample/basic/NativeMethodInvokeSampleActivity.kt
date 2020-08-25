@@ -8,6 +8,13 @@ import kotlinx.android.synthetic.main.activity_native_method_invoke_sample.*
 import kotlin.system.measureTimeMillis
 
 class NativeMethodInvokeSampleActivity : AppCompatActivity() {
+    companion object {
+        private const val TAG="MainActivity"
+        // Used to load the 'native-lib' library on application startup.
+        init {
+            System.loadLibrary("basic-native-lib")
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_native_method_invoke_sample)
@@ -59,19 +66,12 @@ class NativeMethodInvokeSampleActivity : AppCompatActivity() {
         }
     }
 
-    external fun nGetIntMethod(targetClass: Class<*>, methodName: String): Long
+    private external fun nGetIntMethod(targetClass: Class<*>, methodName: String): Long
 
-    external fun nSetIntMethod(targetClass: Class<*>, methodName: String): Long
+    private external fun nSetIntMethod(targetClass: Class<*>, methodName: String): Long
 
-    external fun nCallSetIntMethod(target: Any, methodId:Long, arg:Int)
+    private external fun nCallSetIntMethod(target: Any, methodId:Long, arg:Int)
 
-    external fun nCallGetIntMethod(target: Any, methodId:Long): Int
+    private external fun nCallGetIntMethod(target: Any, methodId:Long): Int
 
-    companion object {
-        private const val TAG="MainActivity"
-        // Used to load the 'native-lib' library on application startup.
-        init {
-            System.loadLibrary("method-native-lib")
-        }
-    }
 }

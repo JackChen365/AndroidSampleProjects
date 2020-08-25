@@ -9,34 +9,24 @@ cmake_minimum_required(VERSION 3.9)
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
-
-add_library( # Sets the name of the library.
-             native-lib
-             # Sets the library as a shared library.
-             SHARED
-             # Provides a relative path to your source file(s).
-        hello-native-lib.cpp)
-
-add_library( # Sets the name of the library.
-        method-native-lib
-        # Sets the library as a shared library.
+add_library(basic-native-lib
         SHARED
-        # Provides a relative path to your source file(s).
-        method-native-lib.cpp)
+        basic/Person.cpp
+        basic/math-test.cpp
+        basic-native-lib.cpp)
 
-add_library( # Sets the name of the library.
-        file-search
-        # Sets the library as a shared library.
+add_library(thread-native-lib
         SHARED
-        # Provides a relative path to your source file(s).
-        file-search-lib.cpp)
+        thread-native-lib.cpp)
 
-add_library( # Sets the name of the library.
-        native-course
-        # Sets the library as a shared library.
+add_library(file-native-lib
         SHARED
-        # Provides a relative path to your source file(s).
+        file-native-lib.cpp)
+
+add_library(native-course-lib
+        SHARED
         course-native-lib.cpp)
+
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -54,9 +44,10 @@ find_library( # Sets the name of the path variable.
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
-target_link_libraries(native-lib ${log-lib} )
-target_link_libraries(file-search ${log-lib} )
-target_link_libraries(file-search ${stdc++fs})
-target_link_libraries(method-native-lib ${log-lib} )
-target_link_libraries(native-course ${log-lib})
+target_link_libraries(basic-native-lib ${log-lib} )
+#target_link_libraries(file-search ${log-lib} )
+#target_link_libraries(file-search ${stdc++fs})
+target_link_libraries(thread-native-lib ${log-lib} )
+target_link_libraries(file-native-lib ${log-lib} )
+target_link_libraries(native-course-lib ${log-lib} )
 

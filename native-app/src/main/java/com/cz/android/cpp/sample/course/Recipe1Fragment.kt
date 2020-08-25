@@ -15,10 +15,9 @@ import kotlinx.android.synthetic.main.fragment_native_recipe1.*
 class Recipe1Fragment : Fragment() {
     companion object {
         init {
-            System.loadLibrary("native-course")
+            System.loadLibrary("native-course-lib")
         }
     }
-
     private external fun displayMessage()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

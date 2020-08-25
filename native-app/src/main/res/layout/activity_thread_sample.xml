@@ -5,16 +5,22 @@
     android:padding="16dp">
 
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_native_description"
-        android:background="@color/md_grey_200"/>
-
-    <TextView
-        android:id="@+id/sample_text"
+        android:id="@+id/timeText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center" />
+        android:layout_gravity="center_horizontal"
+        android:textSize="20sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/countText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="32dp"
+        android:textSize="32sp"
+        android:textStyle="bold" />
+
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -24,20 +30,19 @@
         android:layout_margin="12dp">
 
         <Button
-            android:id="@+id/testButton1"
+            android:id="@+id/startButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="right|bottom"
-            android:text="output1"
+            android:text="start"
             android:textAllCaps="false"/>
 
         <Button
-            android:id="@+id/testButton2"
+            android:id="@+id/stopButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="right|bottom"
-            android:text="output2"
+            android:text="stop"
             android:textAllCaps="false"/>
     </LinearLayout>
-
 </FrameLayout>

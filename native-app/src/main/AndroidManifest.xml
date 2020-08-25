@@ -2,16 +2,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.cz.android.cpp.sample">
 
+    <uses-permission-sdk-23 android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission-sdk-23 android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".basic.NativeFileSearchActivity"></activity>
-        <activity android:name=".basic.NativeMethodInvokeSampleActivity" />
+        <activity android:name=".thread.ThreadConsumerAndProducerActivity"></activity>
         <activity android:name=".basic.HelloNativeSampleActivity" />
+        <activity android:name=".basic.NativeMethodInvokeSampleActivity" />
+        <activity android:name=".basic.NativeObjectActivity" />
+        <activity android:name=".basic.NativeStudentListActivity" />
+        <activity android:name=".file.FileWatchSampleActivity" />
+        <activity android:name=".file.FileListSampleActivity" />
+        <activity android:name=".thread.ThreadSampleActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
