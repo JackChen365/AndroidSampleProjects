@@ -16,6 +16,11 @@ using namespace std;
 #define  logI(...)  __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
 #define  logE(...)  __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
+//------------------------------------------------------------------------------------------------------
+//https://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/invocation.html
+//There are few things you have to consider here. First of all, JVM can have only one, active, thread. It means that each thread running in parallel must acquire access to JVM by attaching to it. You can find description here. Especially, make sure to pay attention to following section:
+//The JNI interface pointer (JNIEnv) is valid only in the current thread. Should another thread need to access the Java VM, it must first call AttachCurrentThread() to attach itself to the VM and obtain a JNI interface pointer. Once attached to the VM, a native thread works just like an ordinary Java thread running inside a native method. The native thread remains attached to the VM until it calls DetachCurrentThread() to detach itself.
+//------------------------------------------------------------------------------------------------------
 
 typedef class ThreadContext{
 public:
@@ -122,12 +127,13 @@ Java_com_cz_android_cpp_sample_thread_ThreadSampleActivity_start(JNIEnv *env, jo
 mutex mutex_obj;
 unique_lock<mutex> unique_lock(mutex_obj);
 condition_variable condition;
+bool readyToSet=false;
 int counter;
 
 
 void consume(){
     mutex_obj.lock();
-//    condition.wait(unique_lock,[]{false});
+//    condition.wait(unique_lock,[]{return readyToSet;});
     mutex_obj.unlock();
 }
 
