@@ -179,3 +179,45 @@ Java_com_cz_android_cpp_sample_file_FileListSampleActivity_listDirectoryRecursiv
     list_directory_internal(path,0,true);
     env->ReleaseStringUTFChars(jpath,path);
 }
+
+
+//------------------------------------------------------------------------------------------------------
+//Read file content from native
+//------------------------------------------------------------------------------------------------------
+#include <fstream>
+#include <future>
+
+char* readText(const char* file_path){
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    char* buffer= nullptr;
+    std::ifstream file(file_path,ios::in|ios::binary);
+    if (file.is_open()) {
+        // get its size:
+        file.seekg(0, std::ios::end);
+        int fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+        buffer=new char[fileSize];
+        if(!file.eof()){
+            file.read(buffer,fileSize);
+        }
+        file.close();
+    }
+    return buffer;
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_com_cz_android_cpp_sample_file_FileReaderSampleActivity_readFileText(JNIEnv *env, jobject thiz,
+                                                                          jstring jfile_path) {
+    const char* file_path=env->GetStringUTFChars(jfile_path,0);
+    std::future task=std::async(readText,file_path);
+    task.wait_for(std::chrono::milliseconds(2000));
+    char* buffer=task.get();
+    jstring content=NULL;
+    if(nullptr!=buffer){
+        content=env->NewStringUTF(buffer);
+    }
+    env->ReleaseStringUTFChars(jfile_path,file_path);
+    delete[] buffer;
+    return content;
+}

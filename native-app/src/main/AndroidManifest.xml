@@ -13,7 +13,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".thread.ThreadConsumerAndProducerActivity"></activity>
+        <activity android:name=".file.FileReaderSampleActivity"></activity>
+        <activity android:name=".thread.ThreadConsumerAndProducerActivity" />
         <activity android:name=".basic.HelloNativeSampleActivity" />
         <activity android:name=".basic.NativeMethodInvokeSampleActivity" />
         <activity android:name=".basic.NativeObjectActivity" />

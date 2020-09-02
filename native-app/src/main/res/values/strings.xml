@@ -7,4 +7,5 @@
     <string name="method_invoke_description">
         Click the button, You will see the performance difference between native method call and Java Inflect.
     </string>
+    <string name="permission_denied">申请权限拒绝</string>
 </resources>

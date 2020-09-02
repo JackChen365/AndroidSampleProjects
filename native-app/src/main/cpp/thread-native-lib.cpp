@@ -143,9 +143,3 @@ void produce(){
 
     mutex_obj.unlock();
 }
-
-
-
-
-
-

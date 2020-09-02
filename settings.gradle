@@ -1,3 +1,5 @@
+include ':gif'
+include ':view'
 include ':exoplayer'
 include ':gesture'
 include ':layouttransition'
