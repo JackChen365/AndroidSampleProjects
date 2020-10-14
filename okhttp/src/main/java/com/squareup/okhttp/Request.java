@@ -15,31 +15,34 @@
  */
 package com.squareup.okhttp;
 
-import java.net.URI;
 import java.net.URL;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
-import com.squareup.okhttp.internal.http.HttpMethod;
+import java.util.Map;
+import javax.annotation.Nullable;
+import okhttp3.internal.Util;
+import okhttp3.internal.http.HttpMethod;
 
 /**
  * An HTTP request. Instances of this class are immutable if their {@link #body} is null or itself
  * immutable.
  */
 public final class Request {
-  private final HttpUrl url;
-  private final String method;
-  private final Headers headers;
-  private final RequestBody body;
-  private final Object tag;
+  final HttpUrl url;
+  final String method;
+  final Headers headers;
+  final @Nullable RequestBody body;
+  final Map<Class<?>, Object> tags;
 
-  private volatile URI javaNetUri; // Lazily initialized.
-  private volatile CacheControl cacheControl; // Lazily initialized.
+  private volatile @Nullable CacheControl cacheControl; // Lazily initialized.
 
-  private Request(Builder builder) {
+  Request(Builder builder) {
     this.url = builder.url;
     this.method = builder.method;
     this.headers = builder.headers.build();
     this.body = builder.body;
-    this.tag = builder.tag != null ? builder.tag : this;
+    this.tags = Util.immutableMap(builder.tags);
   }
 
   public HttpUrl url() {
@@ -54,7 +57,7 @@ public final class Request {
     return headers;
   }
 
-  public String header(String name) {
+  public @Nullable String header(String name) {
     return headers.get(name);
   }
 
@@ -62,12 +65,28 @@ public final class Request {
     return headers.values(name);
   }
 
-  public RequestBody body() {
+  public @Nullable RequestBody body() {
     return body;
   }
 
-  public Object tag() {
-    return tag;
+  /**
+   * Returns the tag attached with {@code Object.class} as a key, or null if no tag is attached with
+   * that key.
+   *
+   * <p>Prior to OkHttp 3.11, this method never returned null if no tag was attached. Instead it
+   * returned either this request, or the request upon which this request was derived with {@link
+   * #newBuilder()}.
+   */
+  public @Nullable Object tag() {
+    return tag(Object.class);
+  }
+
+  /**
+   * Returns the tag attached with {@code type} as a key, or null if no tag is attached with that
+   * key.
+   */
+  public @Nullable <T> T tag(Class<? extends T> type) {
+    return type.cast(tags.get(type));
   }
 
   public Builder newBuilder() {
@@ -92,33 +111,37 @@ public final class Request {
         + method
         + ", url="
         + url
-        + ", tag="
-        + (tag != this ? tag : null)
+        + ", tags="
+        + tags
         + '}';
   }
 
   public static class Builder {
-    private HttpUrl url;
-    private String method;
-    private Headers.Builder headers;
-    private RequestBody body;
-    private Object tag;
+    @Nullable HttpUrl url;
+    String method;
+    Headers.Builder headers;
+    @Nullable RequestBody body;
+
+    /** A mutable map of tags, or an immutable empty map if we don't have any. */
+    Map<Class<?>, Object> tags = Collections.emptyMap();
 
     public Builder() {
       this.method = "GET";
       this.headers = new Headers.Builder();
     }
 
-    private Builder(Request request) {
+    Builder(Request request) {
       this.url = request.url;
       this.method = request.method;
       this.body = request.body;
-      this.tag = request.tag;
+      this.tags = request.tags.isEmpty()
+          ? Collections.<Class<?>, Object>emptyMap()
+          : new LinkedHashMap<>(request.tags);
       this.headers = request.headers.newBuilder();
     }
 
     public Builder url(HttpUrl url) {
-      if (url == null) throw new IllegalArgumentException("url == null");
+      if (url == null) throw new NullPointerException("url == null");
       this.url = url;
       return this;
     }
@@ -130,18 +153,16 @@ public final class Request {
      * exception by calling {@link HttpUrl#parse}; it returns null for invalid URLs.
      */
     public Builder url(String url) {
-      if (url == null) throw new IllegalArgumentException("url == null");
+      if (url == null) throw new NullPointerException("url == null");
 
-      // Silently replace websocket URLs with HTTP URLs.
+      // Silently replace web socket URLs with HTTP URLs.
       if (url.regionMatches(true, 0, "ws:", 0, 3)) {
         url = "http:" + url.substring(3);
       } else if (url.regionMatches(true, 0, "wss:", 0, 4)) {
         url = "https:" + url.substring(4);
       }
 
-      HttpUrl parsed = HttpUrl.parse(url);
-      if (parsed == null) throw new IllegalArgumentException("unexpected url: " + url);
-      return url(parsed);
+      return url(HttpUrl.get(url));
     }
 
     /**
@@ -151,10 +172,8 @@ public final class Request {
      * https}.
      */
     public Builder url(URL url) {
-      if (url == null) throw new IllegalArgumentException("url == null");
-      HttpUrl parsed = HttpUrl.get(url);
-      if (parsed == null) throw new IllegalArgumentException("unexpected url: " + url);
-      return url(parsed);
+      if (url == null) throw new NullPointerException("url == null");
+      return url(HttpUrl.get(url.toString()));
     }
 
     /**
@@ -178,6 +197,7 @@ public final class Request {
       return this;
     }
 
+    /** Removes all headers named {@code name} on this builder. */
     public Builder removeHeader(String name) {
       headers.removeAll(name);
       return this;
@@ -212,12 +232,12 @@ public final class Request {
       return method("POST", body);
     }
 
-    public Builder delete(RequestBody body) {
+    public Builder delete(@Nullable RequestBody body) {
       return method("DELETE", body);
     }
 
     public Builder delete() {
-      return delete(RequestBody.create(null, new byte[0]));
+      return delete(Util.EMPTY_REQUEST);
     }
 
     public Builder put(RequestBody body) {
@@ -228,10 +248,9 @@ public final class Request {
       return method("PATCH", body);
     }
 
-    public Builder method(String method, RequestBody body) {
-      if (method == null || method.length() == 0) {
-        throw new IllegalArgumentException("method == null || method.length() == 0");
-      }
+    public Builder method(String method, @Nullable RequestBody body) {
+      if (method == null) throw new NullPointerException("method == null");
+      if (method.length() == 0) throw new IllegalArgumentException("method.length() == 0");
       if (body != null && !HttpMethod.permitsRequestBody(method)) {
         throw new IllegalArgumentException("method " + method + " must not have a request body.");
       }
@@ -243,12 +262,29 @@ public final class Request {
       return this;
     }
 
+    /** Attaches {@code tag} to the request using {@code Object.class} as a key. */
+    public Builder tag(@Nullable Object tag) {
+      return tag(Object.class, tag);
+    }
+
     /**
-     * Attaches {@code tag} to the request. It can be used later to cancel the request. If the tag
-     * is unspecified or null, the request is canceled by using the request itself as the tag.
+     * Attaches {@code tag} to the request using {@code type} as a key. Tags can be read from a
+     * request using {@link Request#tag}. Use null to remove any existing tag assigned for {@code
+     * type}.
+     *
+     * <p>Use this API to attach timing, debugging, or other application data to a request so that
+     * you may read it in interceptors, event listeners, or callbacks.
      */
-    public Builder tag(Object tag) {
-      this.tag = tag;
+    public <T> Builder tag(Class<? super T> type, @Nullable T tag) {
+      if (type == null) throw new NullPointerException("type == null");
+
+      if (tag == null) {
+        tags.remove(type);
+      } else {
+        if (tags.isEmpty()) tags = new LinkedHashMap<>();
+        tags.put(type, type.cast(tag));
+      }
+
       return this;
     }
 

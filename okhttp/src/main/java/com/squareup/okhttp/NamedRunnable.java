@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.squareup.okhttp;
 
 /**
@@ -23,7 +22,7 @@ public abstract class NamedRunnable implements Runnable {
   protected final String name;
 
   public NamedRunnable(String format, Object... args) {
-    this.name = String.format(format, args);
+    this.name = Util.format(format, args);
   }
 
   @Override public final void run() {

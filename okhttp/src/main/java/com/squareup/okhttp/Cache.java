@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.squareup.okhttp;
 
 import java.io.Closeable;
@@ -29,15 +28,17 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import com.squareup.okhttp.internal.DiskLruCache;
-import com.squareup.okhttp.internal.InternalCache;
-import com.squareup.okhttp.internal.Util;
-import com.squareup.okhttp.internal.http.CacheRequest;
-import com.squareup.okhttp.internal.http.CacheStrategy;
-import com.squareup.okhttp.internal.http.HttpMethod;
-import com.squareup.okhttp.internal.http.OkHeaders;
-import com.squareup.okhttp.internal.http.StatusLine;
-import com.squareup.okhttp.internal.io.FileSystem;
+import javax.annotation.Nullable;
+import okhttp3.internal.Util;
+import okhttp3.internal.cache.CacheRequest;
+import okhttp3.internal.cache.CacheStrategy;
+import okhttp3.internal.cache.DiskLruCache;
+import okhttp3.internal.cache.InternalCache;
+import okhttp3.internal.http.HttpHeaders;
+import okhttp3.internal.http.HttpMethod;
+import okhttp3.internal.http.StatusLine;
+import okhttp3.internal.io.FileSystem;
+import okhttp3.internal.platform.Platform;
 import okio.Buffer;
 import okio.BufferedSink;
 import okio.BufferedSource;
@@ -152,7 +153,7 @@ public final class Cache implements Closeable, Flushable {
       Cache.this.remove(request);
     }
 
-    @Override public void update(Response cached, Response network) throws IOException {
+    @Override public void update(Response cached, Response network) {
       Cache.this.update(cached, network);
     }
 
@@ -165,15 +166,18 @@ public final class Cache implements Closeable, Flushable {
     }
   };
 
-  private final DiskLruCache cache;
+  final DiskLruCache cache;
 
   /* read and write statistics, all guarded by 'this' */
-  private int writeSuccessCount;
-  private int writeAbortCount;
+  int writeSuccessCount;
+  int writeAbortCount;
   private int networkCount;
   private int hitCount;
   private int requestCount;
 
+  /**
+   * Create a cache of at most {@code maxSize} bytes in {@code directory}.
+   */
   public Cache(File directory, long maxSize) {
     this(directory, maxSize, FileSystem.SYSTEM);
   }
@@ -182,12 +186,12 @@ public final class Cache implements Closeable, Flushable {
     this.cache = DiskLruCache.create(fileSystem, directory, VERSION, ENTRY_COUNT, maxSize);
   }
 
-  private static String urlToKey(Request request) {
-    return Util.md5Hex(request.url().toString());
+  public static String key(HttpUrl url) {
+    return ByteString.encodeUtf8(url.toString()).md5().hex();
   }
 
-  Response get(Request request) {
-    String key = urlToKey(request);
+  @Nullable Response get(Request request) {
+    String key = key(request.url());
     DiskLruCache.Snapshot snapshot;
     Entry entry;
     try {
@@ -217,7 +221,7 @@ public final class Cache implements Closeable, Flushable {
     return response;
   }
 
-  private CacheRequest put(Response response) throws IOException {
+  @Nullable CacheRequest put(Response response) {
     String requestMethod = response.request().method();
 
     if (HttpMethod.invalidatesCache(response.request().method())) {
@@ -235,14 +239,14 @@ public final class Cache implements Closeable, Flushable {
       return null;
     }
 
-    if (OkHeaders.hasVaryAll(response)) {
+    if (HttpHeaders.hasVaryAll(response)) {
       return null;
     }
 
     Entry entry = new Entry(response);
     DiskLruCache.Editor editor = null;
     try {
-      editor = cache.edit(urlToKey(response.request()));
+      editor = cache.edit(key(response.request().url()));
       if (editor == null) {
         return null;
       }
@@ -254,11 +258,11 @@ public final class Cache implements Closeable, Flushable {
     }
   }
 
-  private void remove(Request request) throws IOException {
-    cache.remove(urlToKey(request));
+  void remove(Request request) throws IOException {
+    cache.remove(key(request.url()));
   }
 
-  private void update(Response cached, Response network) {
+  void update(Response cached, Response network) {
     Entry entry = new Entry(network);
     DiskLruCache.Snapshot snapshot = ((CacheResponseBody) cached.body()).snapshot;
     DiskLruCache.Editor editor = null;
@@ -273,7 +277,7 @@ public final class Cache implements Closeable, Flushable {
     }
   }
 
-  private void abortQuietly(DiskLruCache.Editor editor) {
+  private void abortQuietly(@Nullable DiskLruCache.Editor editor) {
     // Give up because the cache cannot be written.
     try {
       if (editor != null) {
@@ -327,7 +331,7 @@ public final class Cache implements Closeable, Flushable {
     return new Iterator<String>() {
       final Iterator<DiskLruCache.Snapshot> delegate = cache.snapshots();
 
-      String nextUrl;
+      @Nullable String nextUrl;
       boolean canRemove;
 
       @Override public boolean hasNext() {
@@ -378,6 +382,7 @@ public final class Cache implements Closeable, Flushable {
     return cache.size();
   }
 
+  /** Max size of the cache (in bytes). */
   public long maxSize() {
     return cache.getMaxSize();
   }
@@ -398,7 +403,7 @@ public final class Cache implements Closeable, Flushable {
     return cache.isClosed();
   }
 
-  private synchronized void trackResponse(CacheStrategy cacheStrategy) {
+  synchronized void trackResponse(CacheStrategy cacheStrategy) {
     requestCount++;
 
     if (cacheStrategy.networkRequest != null) {
@@ -410,7 +415,7 @@ public final class Cache implements Closeable, Flushable {
     }
   }
 
-  private synchronized void trackConditionalCacheHit() {
+  synchronized void trackConditionalCacheHit() {
     hitCount++;
   }
 
@@ -429,10 +434,10 @@ public final class Cache implements Closeable, Flushable {
   private final class CacheRequestImpl implements CacheRequest {
     private final DiskLruCache.Editor editor;
     private Sink cacheOut;
-    private boolean done;
     private Sink body;
+    boolean done;
 
-    public CacheRequestImpl(final DiskLruCache.Editor editor) throws IOException {
+    CacheRequestImpl(final DiskLruCache.Editor editor) {
       this.editor = editor;
       this.cacheOut = editor.newSink(ENTRY_BODY);
       this.body = new ForwardingSink(cacheOut) {
@@ -471,6 +476,12 @@ public final class Cache implements Closeable, Flushable {
   }
 
   private static final class Entry {
+    /** Synthetic response header: the local time when the request was sent. */
+    private static final String SENT_MILLIS = Platform.get().getPrefix() + "-Sent-Millis";
+
+    /** Synthetic response header: the local time when the response was received. */
+    private static final String RECEIVED_MILLIS = Platform.get().getPrefix() + "-Received-Millis";
+
     private final String url;
     private final Headers varyHeaders;
     private final String requestMethod;
@@ -478,7 +489,9 @@ public final class Cache implements Closeable, Flushable {
     private final int code;
     private final String message;
     private final Headers responseHeaders;
-    private final Handshake handshake;
+    private final @Nullable Handshake handshake;
+    private final long sentRequestMillis;
+    private final long receivedResponseMillis;
 
     /**
      * Reads an entry from an input stream. A typical entry looks like this:
@@ -528,7 +541,7 @@ public final class Cache implements Closeable, Flushable {
      * base64-encoded and appear each on their own line. A length of -1 is used to encode a null
      * array. The last line is optional. If present, it contains the TLS version.
      */
-    public Entry(Source in) throws IOException {
+    Entry(Source in) throws IOException {
       try {
         BufferedSource source = Okio.buffer(in);
         url = source.readUtf8LineStrict();
@@ -549,6 +562,16 @@ public final class Cache implements Closeable, Flushable {
         for (int i = 0; i < responseHeaderLineCount; i++) {
           responseHeadersBuilder.addLenient(source.readUtf8LineStrict());
         }
+        String sendRequestMillisString = responseHeadersBuilder.get(SENT_MILLIS);
+        String receivedResponseMillisString = responseHeadersBuilder.get(RECEIVED_MILLIS);
+        responseHeadersBuilder.removeAll(SENT_MILLIS);
+        responseHeadersBuilder.removeAll(RECEIVED_MILLIS);
+        sentRequestMillis = sendRequestMillisString != null
+            ? Long.parseLong(sendRequestMillisString)
+            : 0L;
+        receivedResponseMillis = receivedResponseMillisString != null
+            ? Long.parseLong(receivedResponseMillisString)
+            : 0L;
         responseHeaders = responseHeadersBuilder.build();
 
         if (isHttps()) {
@@ -562,7 +585,7 @@ public final class Cache implements Closeable, Flushable {
           List<Certificate> localCertificates = readCertificateList(source);
           TlsVersion tlsVersion = !source.exhausted()
               ? TlsVersion.forJavaName(source.readUtf8LineStrict())
-              : null;
+              : TlsVersion.SSL_3_0;
           handshake = Handshake.get(tlsVersion, cipherSuite, peerCertificates, localCertificates);
         } else {
           handshake = null;
@@ -572,55 +595,61 @@ public final class Cache implements Closeable, Flushable {
       }
     }
 
-    public Entry(Response response) {
+    Entry(Response response) {
       this.url = response.request().url().toString();
-      this.varyHeaders = OkHeaders.varyHeaders(response);
+      this.varyHeaders = HttpHeaders.varyHeaders(response);
       this.requestMethod = response.request().method();
       this.protocol = response.protocol();
       this.code = response.code();
       this.message = response.message();
       this.responseHeaders = response.headers();
       this.handshake = response.handshake();
+      this.sentRequestMillis = response.sentRequestAtMillis();
+      this.receivedResponseMillis = response.receivedResponseAtMillis();
     }
 
     public void writeTo(DiskLruCache.Editor editor) throws IOException {
       BufferedSink sink = Okio.buffer(editor.newSink(ENTRY_METADATA));
 
-      sink.writeUtf8(url);
-      sink.writeByte('\n');
-      sink.writeUtf8(requestMethod);
-      sink.writeByte('\n');
-      sink.writeDecimalLong(varyHeaders.size());
-      sink.writeByte('\n');
+      sink.writeUtf8(url)
+          .writeByte('\n');
+      sink.writeUtf8(requestMethod)
+          .writeByte('\n');
+      sink.writeDecimalLong(varyHeaders.size())
+          .writeByte('\n');
       for (int i = 0, size = varyHeaders.size(); i < size; i++) {
-        sink.writeUtf8(varyHeaders.name(i));
-        sink.writeUtf8(": ");
-        sink.writeUtf8(varyHeaders.value(i));
-        sink.writeByte('\n');
+        sink.writeUtf8(varyHeaders.name(i))
+            .writeUtf8(": ")
+            .writeUtf8(varyHeaders.value(i))
+            .writeByte('\n');
       }
 
-      sink.writeUtf8(new StatusLine(protocol, code, message).toString());
-      sink.writeByte('\n');
-      sink.writeDecimalLong(responseHeaders.size());
-      sink.writeByte('\n');
+      sink.writeUtf8(new StatusLine(protocol, code, message).toString())
+          .writeByte('\n');
+      sink.writeDecimalLong(responseHeaders.size() + 2)
+          .writeByte('\n');
       for (int i = 0, size = responseHeaders.size(); i < size; i++) {
-        sink.writeUtf8(responseHeaders.name(i));
-        sink.writeUtf8(": ");
-        sink.writeUtf8(responseHeaders.value(i));
-        sink.writeByte('\n');
+        sink.writeUtf8(responseHeaders.name(i))
+            .writeUtf8(": ")
+            .writeUtf8(responseHeaders.value(i))
+            .writeByte('\n');
       }
+      sink.writeUtf8(SENT_MILLIS)
+          .writeUtf8(": ")
+          .writeDecimalLong(sentRequestMillis)
+          .writeByte('\n');
+      sink.writeUtf8(RECEIVED_MILLIS)
+          .writeUtf8(": ")
+          .writeDecimalLong(receivedResponseMillis)
+          .writeByte('\n');
 
       if (isHttps()) {
         sink.writeByte('\n');
-        sink.writeUtf8(handshake.cipherSuite().javaName());
-        sink.writeByte('\n');
+        sink.writeUtf8(handshake.cipherSuite().javaName())
+            .writeByte('\n');
         writeCertList(sink, handshake.peerCertificates());
         writeCertList(sink, handshake.localCertificates());
-        // The handshake’s TLS version is null on HttpsURLConnection and on older cached responses.
-        if (handshake.tlsVersion() != null) {
-          sink.writeUtf8(handshake.tlsVersion().javaName());
-          sink.writeByte('\n');
-        }
+        sink.writeUtf8(handshake.tlsVersion().javaName()).writeByte('\n');
       }
       sink.close();
     }
@@ -651,13 +680,13 @@ public final class Cache implements Closeable, Flushable {
     private void writeCertList(BufferedSink sink, List<Certificate> certificates)
         throws IOException {
       try {
-        sink.writeDecimalLong(certificates.size());
-        sink.writeByte('\n');
+        sink.writeDecimalLong(certificates.size())
+            .writeByte('\n');
         for (int i = 0, size = certificates.size(); i < size; i++) {
           byte[] bytes = certificates.get(i).getEncoded();
           String line = ByteString.of(bytes).base64();
-          sink.writeUtf8(line);
-          sink.writeByte('\n');
+          sink.writeUtf8(line)
+              .writeByte('\n');
         }
       } catch (CertificateEncodingException e) {
         throw new IOException(e.getMessage());
@@ -667,7 +696,7 @@ public final class Cache implements Closeable, Flushable {
     public boolean matches(Request request, Response response) {
       return url.equals(request.url().toString())
           && requestMethod.equals(request.method())
-          && OkHeaders.varyMatches(response, varyHeaders, request);
+          && HttpHeaders.varyMatches(response, varyHeaders, request);
     }
 
     public Response response(DiskLruCache.Snapshot snapshot) {
@@ -686,11 +715,13 @@ public final class Cache implements Closeable, Flushable {
           .headers(responseHeaders)
           .body(new CacheResponseBody(snapshot, contentType, contentLength))
           .handshake(handshake)
+          .sentRequestAtMillis(sentRequestMillis)
+          .receivedResponseAtMillis(receivedResponseMillis)
           .build();
     }
   }
 
-  private static int readInt(BufferedSource source) throws IOException {
+  static int readInt(BufferedSource source) throws IOException {
     try {
       long result = source.readDecimalLong();
       String line = source.readUtf8LineStrict();
@@ -704,12 +735,12 @@ public final class Cache implements Closeable, Flushable {
   }
 
   private static class CacheResponseBody extends ResponseBody {
-    private final DiskLruCache.Snapshot snapshot;
+    final DiskLruCache.Snapshot snapshot;
     private final BufferedSource bodySource;
-    private final String contentType;
-    private final String contentLength;
+    private final @Nullable String contentType;
+    private final @Nullable String contentLength;
 
-    public CacheResponseBody(final DiskLruCache.Snapshot snapshot,
+    CacheResponseBody(final DiskLruCache.Snapshot snapshot,
         String contentType, String contentLength) {
       this.snapshot = snapshot;
       this.contentType = contentType;

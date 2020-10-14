@@ -1,9 +1,24 @@
+/*
+ * Copyright (C) 2013 Square, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.squareup.okhttp.http;
 
 import java.net.HttpURLConnection;
 import java.net.Proxy;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.Request;
+import okhttp3.HttpUrl;
+import okhttp3.Request;
 
 public final class RequestLine {
   private RequestLine() {
@@ -12,9 +27,9 @@ public final class RequestLine {
   /**
    * Returns the request status line, like "GET / HTTP/1.1". This is exposed to the application by
    * {@link HttpURLConnection#getHeaderFields}, so it needs to be set even if the transport is
-   * SPDY.
+   * HTTP/2.
    */
-  static String get(Request request, Proxy.Type proxyType) {
+  public static String get(Request request, Proxy.Type proxyType) {
     StringBuilder result = new StringBuilder();
     result.append(request.method());
     result.append(' ');

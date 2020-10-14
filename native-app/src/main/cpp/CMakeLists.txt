@@ -31,6 +31,10 @@ add_library(file-native-lib
         SHARED
         file-native-lib.cpp)
 
+add_library(file-native-test
+        SHARED
+        file-native-test.cpp)
+
 add_library(native-course-lib
         SHARED
         course-native-lib.cpp)

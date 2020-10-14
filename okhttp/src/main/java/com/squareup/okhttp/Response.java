@@ -15,10 +15,12 @@
  */
 package com.squareup.okhttp;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import com.squareup.okhttp.internal.http.OkHeaders;
+import javax.annotation.Nullable;
+import okhttp3.internal.http.HttpHeaders;
 import okio.Buffer;
 import okio.BufferedSource;
 
@@ -28,28 +30,33 @@ import static java.net.HttpURLConnection.HTTP_MULT_CHOICE;
 import static java.net.HttpURLConnection.HTTP_PROXY_AUTH;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
-import static com.squareup.okhttp.internal.http.StatusLine.HTTP_PERM_REDIRECT;
-import static com.squareup.okhttp.internal.http.StatusLine.HTTP_TEMP_REDIRECT;
+import static okhttp3.internal.http.StatusLine.HTTP_PERM_REDIRECT;
+import static okhttp3.internal.http.StatusLine.HTTP_TEMP_REDIRECT;
 
 /**
  * An HTTP response. Instances of this class are not immutable: the response body is a one-shot
- * value that may be consumed only once. All other properties are immutable.
+ * value that may be consumed only once and then closed. All other properties are immutable.
+ *
+ * <p>This class implements {@link Closeable}. Closing it simply closes its response body. See
+ * {@link ResponseBody} for an explanation and examples.
  */
-public final class Response {
-  private final Request request;
-  private final Protocol protocol;
-  private final int code;
-  private final String message;
-  private final Handshake handshake;
-  private final Headers headers;
-  private final ResponseBody body;
-  private Response networkResponse;
-  private Response cacheResponse;
-  private final Response priorResponse;
+public final class Response implements Closeable {
+  final Request request;
+  final Protocol protocol;
+  final int code;
+  final String message;
+  final @Nullable Handshake handshake;
+  final Headers headers;
+  final @Nullable ResponseBody body;
+  final @Nullable Response networkResponse;
+  final @Nullable Response cacheResponse;
+  final @Nullable Response priorResponse;
+  final long sentRequestAtMillis;
+  final long receivedResponseAtMillis;
 
-  private volatile CacheControl cacheControl; // Lazily initialized.
+  private volatile @Nullable CacheControl cacheControl; // Lazily initialized.
 
-  private Response(Builder builder) {
+  Response(Builder builder) {
     this.request = builder.request;
     this.protocol = builder.protocol;
     this.code = builder.code;
@@ -60,18 +67,19 @@ public final class Response {
     this.networkResponse = builder.networkResponse;
     this.cacheResponse = builder.cacheResponse;
     this.priorResponse = builder.priorResponse;
+    this.sentRequestAtMillis = builder.sentRequestAtMillis;
+    this.receivedResponseAtMillis = builder.receivedResponseAtMillis;
   }
 
   /**
-   * The wire-level request that initiated this HTTP response. This is not
-   * necessarily the same request issued by the application:
+   * The wire-level request that initiated this HTTP response. This is not necessarily the same
+   * request issued by the application:
    *
    * <ul>
-   *     <li>It may be transformed by the HTTP client. For example, the client
-   *         may copy headers like {@code Content-Length} from the request body.
-   *     <li>It may be the request generated in response to an HTTP redirect or
-   *         authentication challenge. In this case the request URL may be
-   *         different than the initial request URL.
+   *     <li>It may be transformed by the HTTP client. For example, the client may copy headers like
+   *         {@code Content-Length} from the request body.
+   *     <li>It may be the request generated in response to an HTTP redirect or authentication
+   *         challenge. In this case the request URL may be different than the initial request URL.
    * </ul>
    */
   public Request request() {
@@ -98,7 +106,7 @@ public final class Response {
     return code >= 200 && code < 300;
   }
 
-  /** Returns the HTTP status message or null if it is unknown. */
+  /** Returns the HTTP status message. */
   public String message() {
     return message;
   }
@@ -107,7 +115,7 @@ public final class Response {
    * Returns the TLS handshake of the connection that carried this response, or null if the response
    * was received without TLS.
    */
-  public Handshake handshake() {
+  public @Nullable Handshake handshake() {
     return handshake;
   }
 
@@ -115,11 +123,11 @@ public final class Response {
     return headers.values(name);
   }
 
-  public String header(String name) {
+  public @Nullable String header(String name) {
     return header(name, null);
   }
 
-  public String header(String name, String defaultValue) {
+  public @Nullable String header(String name, @Nullable String defaultValue) {
     String result = headers.get(name);
     return result != null ? result : defaultValue;
   }
@@ -157,7 +165,15 @@ public final class Response {
     return ResponseBody.create(body.contentType(), result.size(), result);
   }
 
-  public ResponseBody body() {
+  /**
+   * Returns a non-null value if this response was passed to {@link Callback#onResponse} or returned
+   * from {@link Call#execute()}. Response bodies must be {@linkplain ResponseBody closed} and may
+   * be consumed only once.
+   *
+   * <p>This always returns null on responses returned from {@link #cacheResponse}, {@link
+   * #networkResponse}, and {@link #priorResponse()}.
+   */
+  public @Nullable ResponseBody body() {
     return body;
   }
 
@@ -185,7 +201,7 @@ public final class Response {
    * the network, such as when the response is fully cached. The body of the returned response
    * should not be read.
    */
-  public Response networkResponse() {
+  public @Nullable Response networkResponse() {
     return networkResponse;
   }
 
@@ -194,7 +210,7 @@ public final class Response {
    * cache. For conditional get requests the cache response and network response may both be
    * non-null. The body of the returned response should not be read.
    */
-  public Response cacheResponse() {
+  public @Nullable Response cacheResponse() {
     return cacheResponse;
   }
 
@@ -204,15 +220,20 @@ public final class Response {
    * returned response should not be read because it has already been consumed by the redirecting
    * client.
    */
-  public Response priorResponse() {
+  public @Nullable Response priorResponse() {
     return priorResponse;
   }
 
   /**
-   * Returns the authorization challenges appropriate for this response's code. If the response code
-   * is 401 unauthorized, this returns the "WWW-Authenticate" challenges. If the response code is
-   * 407 proxy unauthorized, this returns the "Proxy-Authenticate" challenges. Otherwise this
-   * returns an empty list of challenges.
+   * Returns the RFC 7235 authorization challenges appropriate for this response's code. If the
+   * response code is 401 unauthorized, this returns the "WWW-Authenticate" challenges. If the
+   * response code is 407 proxy unauthorized, this returns the "Proxy-Authenticate" challenges.
+   * Otherwise this returns an empty list of challenges.
+   *
+   * <p>If a challenge uses the {@code token68} variant instead of auth params, there is exactly one
+   * auth param in the challenge at key {@code null}. Invalid headers and challenges are ignored.
+   * No semantic validation is done, for example that {@code Basic} auth must have a {@code realm}
+   * auth param, this is up to the caller that interprets these challenges.
    */
   public List<Challenge> challenges() {
     String responseField;
@@ -223,7 +244,7 @@ public final class Response {
     } else {
       return Collections.emptyList();
     }
-    return OkHeaders.parseChallenges(headers(), responseField);
+    return HttpHeaders.parseChallenges(headers(), responseField);
   }
 
   /**
@@ -233,6 +254,38 @@ public final class Response {
   public CacheControl cacheControl() {
     CacheControl result = cacheControl;
     return result != null ? result : (cacheControl = CacheControl.parse(headers));
+  }
+
+  /**
+   * Returns a {@linkplain System#currentTimeMillis() timestamp} taken immediately before OkHttp
+   * transmitted the initiating request over the network. If this response is being served from the
+   * cache then this is the timestamp of the original request.
+   */
+  public long sentRequestAtMillis() {
+    return sentRequestAtMillis;
+  }
+
+  /**
+   * Returns a {@linkplain System#currentTimeMillis() timestamp} taken immediately after OkHttp
+   * received this response's headers from the network. If this response is being served from the
+   * cache then this is the timestamp of the original response.
+   */
+  public long receivedResponseAtMillis() {
+    return receivedResponseAtMillis;
+  }
+
+  /**
+   * Closes the response body. Equivalent to {@code body().close()}.
+   *
+   * <p>It is an error to close a response that is not eligible for a body. This includes the
+   * responses returned from {@link #cacheResponse}, {@link #networkResponse}, and {@link
+   * #priorResponse()}.
+   */
+  @Override public void close() {
+    if (body == null) {
+      throw new IllegalStateException("response is not eligible for a body and must not be closed");
+    }
+    body.close();
   }
 
   @Override public String toString() {
@@ -248,22 +301,24 @@ public final class Response {
   }
 
   public static class Builder {
-    private Request request;
-    private Protocol protocol;
-    private int code = -1;
-    private String message;
-    private Handshake handshake;
-    private Headers.Builder headers;
-    private ResponseBody body;
-    private Response networkResponse;
-    private Response cacheResponse;
-    private Response priorResponse;
+    @Nullable Request request;
+    @Nullable Protocol protocol;
+    int code = -1;
+    String message;
+    @Nullable Handshake handshake;
+    Headers.Builder headers;
+    @Nullable ResponseBody body;
+    @Nullable Response networkResponse;
+    @Nullable Response cacheResponse;
+    @Nullable Response priorResponse;
+    long sentRequestAtMillis;
+    long receivedResponseAtMillis;
 
     public Builder() {
       headers = new Headers.Builder();
     }
 
-    private Builder(Response response) {
+    Builder(Response response) {
       this.request = response.request;
       this.protocol = response.protocol;
       this.code = response.code;
@@ -274,6 +329,8 @@ public final class Response {
       this.networkResponse = response.networkResponse;
       this.cacheResponse = response.cacheResponse;
       this.priorResponse = response.priorResponse;
+      this.sentRequestAtMillis = response.sentRequestAtMillis;
+      this.receivedResponseAtMillis = response.receivedResponseAtMillis;
     }
 
     public Builder request(Request request) {
@@ -296,7 +353,7 @@ public final class Response {
       return this;
     }
 
-    public Builder handshake(Handshake handshake) {
+    public Builder handshake(@Nullable Handshake handshake) {
       this.handshake = handshake;
       return this;
     }
@@ -330,18 +387,18 @@ public final class Response {
       return this;
     }
 
-    public Builder body(ResponseBody body) {
+    public Builder body(@Nullable ResponseBody body) {
       this.body = body;
       return this;
     }
 
-    public Builder networkResponse(Response networkResponse) {
+    public Builder networkResponse(@Nullable Response networkResponse) {
       if (networkResponse != null) checkSupportResponse("networkResponse", networkResponse);
       this.networkResponse = networkResponse;
       return this;
     }
 
-    public Builder cacheResponse(Response cacheResponse) {
+    public Builder cacheResponse(@Nullable Response cacheResponse) {
       if (cacheResponse != null) checkSupportResponse("cacheResponse", cacheResponse);
       this.cacheResponse = cacheResponse;
       return this;
@@ -359,7 +416,7 @@ public final class Response {
       }
     }
 
-    public Builder priorResponse(Response priorResponse) {
+    public Builder priorResponse(@Nullable Response priorResponse) {
       if (priorResponse != null) checkPriorResponse(priorResponse);
       this.priorResponse = priorResponse;
       return this;
@@ -371,10 +428,21 @@ public final class Response {
       }
     }
 
+    public Builder sentRequestAtMillis(long sentRequestAtMillis) {
+      this.sentRequestAtMillis = sentRequestAtMillis;
+      return this;
+    }
+
+    public Builder receivedResponseAtMillis(long receivedResponseAtMillis) {
+      this.receivedResponseAtMillis = receivedResponseAtMillis;
+      return this;
+    }
+
     public Response build() {
       if (request == null) throw new IllegalStateException("request == null");
       if (protocol == null) throw new IllegalStateException("protocol == null");
       if (code < 0) throw new IllegalStateException("code < 0: " + code);
+      if (message == null) throw new IllegalStateException("message == null");
       return new Response(this);
     }
   }

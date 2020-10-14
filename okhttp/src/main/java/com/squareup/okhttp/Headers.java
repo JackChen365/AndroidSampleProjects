@@ -18,14 +18,18 @@
 package com.squareup.okhttp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
-import com.squareup.okhttp.internal.http.HttpDate;
+import javax.annotation.Nullable;
+import okhttp3.internal.Util;
+import okhttp3.internal.http.HttpDate;
 
 /**
  * The header fields of a single HTTP message. Values are uninterpreted strings; use {@code Request}
@@ -46,7 +50,7 @@ import com.squareup.okhttp.internal.http.HttpDate;
 public final class Headers {
   private final String[] namesAndValues;
 
-  private Headers(Builder builder) {
+  Headers(Builder builder) {
     this.namesAndValues = builder.namesAndValues.toArray(new String[builder.namesAndValues.size()]);
   }
 
@@ -55,7 +59,7 @@ public final class Headers {
   }
 
   /** Returns the last value corresponding to the specified field, or null. */
-  public String get(String name) {
+  public @Nullable String get(String name) {
     return get(namesAndValues, name);
   }
 
@@ -63,7 +67,7 @@ public final class Headers {
    * Returns the last value corresponding to the specified field parsed as an HTTP date, or null if
    * either the field is absent or cannot be parsed as a date.
    */
-  public Date getDate(String name) {
+  public @Nullable Date getDate(String name) {
     String value = get(name);
     return value != null ? HttpDate.parse(value) : null;
   }
@@ -106,10 +110,62 @@ public final class Headers {
         : Collections.<String>emptyList();
   }
 
+  /**
+   * Returns the number of bytes required to encode these headers using HTTP/1.1. This is also the
+   * approximate size of HTTP/2 headers before they are compressed with HPACK. This value is
+   * intended to be used as a metric: smaller headers are more efficient to encode and transmit.
+   */
+  public long byteCount() {
+    // Each header name has 2 bytes of overhead for ': ' and every header value has 2 bytes of
+    // overhead for '\r\n'.
+    long result = namesAndValues.length * 2;
+
+    for (int i = 0, size = namesAndValues.length; i < size; i++) {
+      result += namesAndValues[i].length();
+    }
+
+    return result;
+  }
+
   public Builder newBuilder() {
     Builder result = new Builder();
     Collections.addAll(result.namesAndValues, namesAndValues);
     return result;
+  }
+
+  /**
+   * Returns true if {@code other} is a {@code Headers} object with the same headers, with the same
+   * casing, in the same order. Note that two headers instances may be <i>semantically</i> equal
+   * but not equal according to this method. In particular, none of the following sets of headers
+   * are equal according to this method: <pre>   {@code
+   *
+   *   1. Original
+   *   Content-Type: text/html
+   *   Content-Length: 50
+   *
+   *   2. Different order
+   *   Content-Length: 50
+   *   Content-Type: text/html
+   *
+   *   3. Different case
+   *   content-type: text/html
+   *   content-length: 50
+   *
+   *   4. Different values
+   *   Content-Type: text/html
+   *   Content-Length: 050
+   * }</pre>
+   *
+   * Applications that require semantically equal headers should convert them into a canonical form
+   * before comparing them for equality.
+   */
+  @Override public boolean equals(@Nullable Object other) {
+    return other instanceof Headers
+        && Arrays.equals(((Headers) other).namesAndValues, namesAndValues);
+  }
+
+  @Override public int hashCode() {
+    return Arrays.hashCode(namesAndValues);
   }
 
   @Override public String toString() {
@@ -121,9 +177,9 @@ public final class Headers {
   }
 
   public Map<String, List<String>> toMultimap() {
-    Map<String, List<String>> result = new LinkedHashMap<String, List<String>>();
+    Map<String, List<String>> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     for (int i = 0, size = size(); i < size; i++) {
-      String name = name(i);
+      String name = name(i).toLowerCase(Locale.US);
       List<String> values = result.get(name);
       if (values == null) {
         values = new ArrayList<>(2);
@@ -148,7 +204,8 @@ public final class Headers {
    * arguments, and they must alternate between header names and values.
    */
   public static Headers of(String... namesAndValues) {
-    if (namesAndValues == null || namesAndValues.length % 2 != 0) {
+    if (namesAndValues == null) throw new NullPointerException("namesAndValues == null");
+    if (namesAndValues.length % 2 != 0) {
       throw new IllegalArgumentException("Expected alternating header names and values");
     }
 
@@ -163,9 +220,8 @@ public final class Headers {
     for (int i = 0; i < namesAndValues.length; i += 2) {
       String name = namesAndValues[i];
       String value = namesAndValues[i + 1];
-      if (name.length() == 0 || name.indexOf('\0') != -1 || value.indexOf('\0') != -1) {
-        throw new IllegalArgumentException("Unexpected header: " + name + ": " + value);
-      }
+      checkName(name);
+      checkValue(value, name);
     }
 
     return new Headers(namesAndValues);
@@ -175,9 +231,7 @@ public final class Headers {
    * Returns headers for the header names and values in the {@link Map}.
    */
   public static Headers of(Map<String, String> headers) {
-    if (headers == null) {
-      throw new IllegalArgumentException("Expected map with header names and values");
-    }
+    if (headers == null) throw new NullPointerException("headers == null");
 
     // Make a defensive copy and clean it up.
     String[] namesAndValues = new String[headers.size() * 2];
@@ -188,9 +242,8 @@ public final class Headers {
       }
       String name = header.getKey().trim();
       String value = header.getValue().trim();
-      if (name.length() == 0 || name.indexOf('\0') != -1 || value.indexOf('\0') != -1) {
-        throw new IllegalArgumentException("Unexpected header: " + name + ": " + value);
-      }
+      checkName(name);
+      checkValue(value, name);
       namesAndValues[i] = name;
       namesAndValues[i + 1] = value;
       i += 2;
@@ -199,8 +252,31 @@ public final class Headers {
     return new Headers(namesAndValues);
   }
 
+  static void checkName(String name) {
+    if (name == null) throw new NullPointerException("name == null");
+    if (name.isEmpty()) throw new IllegalArgumentException("name is empty");
+    for (int i = 0, length = name.length(); i < length; i++) {
+      char c = name.charAt(i);
+      if (c <= '\u0020' || c >= '\u007f') {
+        throw new IllegalArgumentException(Util.format(
+            "Unexpected char %#04x at %d in header name: %s", (int) c, i, name));
+      }
+    }
+  }
+
+  static void checkValue(String value, String name) {
+    if (value == null) throw new NullPointerException("value for name " + name + " == null");
+    for (int i = 0, length = value.length(); i < length; i++) {
+      char c = value.charAt(i);
+      if ((c <= '\u001f' && c != '\t') || c >= '\u007f') {
+        throw new IllegalArgumentException(Util.format(
+            "Unexpected char %#04x at %d in %s value: %s", (int) c, i, name, value));
+      }
+    }
+  }
+
   public static final class Builder {
-    private final List<String> namesAndValues = new ArrayList<>(20);
+    final List<String> namesAndValues = new ArrayList<>(20);
 
     /**
      * Add a header line without any validation. Only appropriate for headers from the remote peer
@@ -228,10 +304,54 @@ public final class Headers {
       return add(line.substring(0, index).trim(), line.substring(index + 1));
     }
 
-    /** Add a field with the specified value. */
+    /**
+     * Add a header with the specified name and value. Does validation of header names and values.
+     */
     public Builder add(String name, String value) {
-      checkNameAndValue(name, value);
+      checkName(name);
+      checkValue(value, name);
       return addLenient(name, value);
+    }
+
+    /**
+     * Add a header with the specified name and value. Does validation of header names, allowing
+     * non-ASCII values.
+     */
+    public Builder addUnsafeNonAscii(String name, String value) {
+      checkName(name);
+      return addLenient(name, value);
+    }
+
+    /**
+     * Adds all headers from an existing collection.
+     */
+    public Builder addAll(Headers headers) {
+      int size = headers.size();
+      for (int i = 0; i < size; i++) {
+        addLenient(headers.name(i), headers.value(i));
+      }
+
+      return this;
+    }
+
+    /**
+     * Add a header with the specified name and formatted Date.
+     * Does validation of header names and values.
+     */
+    public Builder add(String name, Date value) {
+      if (value == null) throw new NullPointerException("value for name " + name + " == null");
+      add(name, HttpDate.format(value));
+      return this;
+    }
+
+    /**
+     * Set a field with the specified date. If the field is not found, it is added. If the field is
+     * found, the existing values are replaced.
+     */
+    public Builder set(String name, Date value) {
+      if (value == null) throw new NullPointerException("value for name " + name + " == null");
+      set(name, HttpDate.format(value));
+      return this;
     }
 
     /**
@@ -260,30 +380,11 @@ public final class Headers {
      * found, the existing values are replaced.
      */
     public Builder set(String name, String value) {
-      checkNameAndValue(name, value);
+      checkName(name);
+      checkValue(value, name);
       removeAll(name);
       addLenient(name, value);
       return this;
-    }
-
-    private void checkNameAndValue(String name, String value) {
-      if (name == null) throw new IllegalArgumentException("name == null");
-      if (name.isEmpty()) throw new IllegalArgumentException("name is empty");
-      for (int i = 0, length = name.length(); i < length; i++) {
-        char c = name.charAt(i);
-        if (c <= '\u001f' || c >= '\u007f') {
-          throw new IllegalArgumentException(String.format(
-              "Unexpected char %#04x at %d in header name: %s", (int) c, i, name));
-        }
-      }
-      if (value == null) throw new IllegalArgumentException("value == null");
-      for (int i = 0, length = value.length(); i < length; i++) {
-        char c = value.charAt(i);
-        if (c <= '\u001f' || c >= '\u007f') {
-          throw new IllegalArgumentException(String.format(
-              "Unexpected char %#04x at %d in header value: %s", (int) c, i, value));
-        }
-      }
     }
 
     /** Equivalent to {@code build().get(name)}, but potentially faster. */

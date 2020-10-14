@@ -25,8 +25,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import com.squareup.okhttp.RealCall.AsyncCall;
-import com.squareup.okhttp.internal.Util;
+import javax.annotation.Nullable;
+import okhttp3.RealCall.AsyncCall;
+import okhttp3.internal.Util;
 
 /**
  * Policy on when async requests are executed.
@@ -38,9 +39,10 @@ import com.squareup.okhttp.internal.Util;
 public final class Dispatcher {
   private int maxRequests = 64;
   private int maxRequestsPerHost = 5;
+  private @Nullable Runnable idleCallback;
 
   /** Executes calls. Created lazily. */
-  private ExecutorService executorService;
+  private @Nullable ExecutorService executorService;
 
   /** Ready async calls in the order they'll be run. */
   private final Deque<AsyncCall> readyAsyncCalls = new ArrayDeque<>();
@@ -73,12 +75,14 @@ public final class Dispatcher {
    * <p>If more than {@code maxRequests} requests are in flight when this is invoked, those requests
    * will remain in flight.
    */
-  public synchronized void setMaxRequests(int maxRequests) {
+  public void setMaxRequests(int maxRequests) {
     if (maxRequests < 1) {
       throw new IllegalArgumentException("max < 1: " + maxRequests);
     }
-    this.maxRequests = maxRequests;
-    promoteCalls();
+    synchronized (this) {
+      this.maxRequests = maxRequests;
+    }
+    promoteAndExecute();
   }
 
   public synchronized int getMaxRequests() {
@@ -93,26 +97,44 @@ public final class Dispatcher {
    *
    * <p>If more than {@code maxRequestsPerHost} requests are in flight when this is invoked, those
    * requests will remain in flight.
+   *
+   * <p>WebSocket connections to hosts <b>do not</b> count against this limit.
    */
-  public synchronized void setMaxRequestsPerHost(int maxRequestsPerHost) {
+  public void setMaxRequestsPerHost(int maxRequestsPerHost) {
     if (maxRequestsPerHost < 1) {
       throw new IllegalArgumentException("max < 1: " + maxRequestsPerHost);
     }
-    this.maxRequestsPerHost = maxRequestsPerHost;
-    promoteCalls();
+    synchronized (this) {
+      this.maxRequestsPerHost = maxRequestsPerHost;
+    }
+    promoteAndExecute();
   }
 
   public synchronized int getMaxRequestsPerHost() {
     return maxRequestsPerHost;
   }
 
-  synchronized void enqueue(AsyncCall call) {
-    if (runningAsyncCalls.size() < maxRequests && runningCallsForHost(call) < maxRequestsPerHost) {
-      runningAsyncCalls.add(call);
-      executorService().execute(call);
-    } else {
+  /**
+   * Set a callback to be invoked each time the dispatcher becomes idle (when the number of running
+   * calls returns to zero).
+   *
+   * <p>Note: The time at which a {@linkplain Call call} is considered idle is different depending
+   * on whether it was run {@linkplain Call#enqueue(Callback) asynchronously} or
+   * {@linkplain Call#execute() synchronously}. Asynchronous calls become idle after the
+   * {@link Callback#onResponse onResponse} or {@link Callback#onFailure onFailure} callback has
+   * returned. Synchronous calls become idle once {@link Call#execute() execute()} returns. This
+   * means that if you are doing synchronous calls the network layer will not truly be idle until
+   * every returned {@link Response} has been closed.
+   */
+  public synchronized void setIdleCallback(@Nullable Runnable idleCallback) {
+    this.idleCallback = idleCallback;
+  }
+
+  void enqueue(AsyncCall call) {
+    synchronized (this) {
       readyAsyncCalls.add(call);
     }
+    promoteAndExecute();
   }
 
   /**
@@ -121,11 +143,11 @@ public final class Dispatcher {
    */
   public synchronized void cancelAll() {
     for (AsyncCall call : readyAsyncCalls) {
-      call.cancel();
+      call.get().cancel();
     }
 
     for (AsyncCall call : runningAsyncCalls) {
-      call.cancel();
+      call.get().cancel();
     }
 
     for (RealCall call : runningSyncCalls) {
@@ -133,33 +155,45 @@ public final class Dispatcher {
     }
   }
 
-  /** Used by {@code AsyncCall#run} to signal completion. */
-  synchronized void finished(AsyncCall call) {
-    if (!runningAsyncCalls.remove(call)) throw new AssertionError("AsyncCall wasn't running!");
-    promoteCalls();
-  }
+  /**
+   * Promotes eligible calls from {@link #readyAsyncCalls} to {@link #runningAsyncCalls} and runs
+   * them on the executor service. Must not be called with synchronization because executing calls
+   * can call into user code.
+   *
+   * @return true if the dispatcher is currently running calls.
+   */
+  private boolean promoteAndExecute() {
+    assert (!Thread.holdsLock(this));
 
-  private void promoteCalls() {
-    if (runningAsyncCalls.size() >= maxRequests) return; // Already running max capacity.
-    if (readyAsyncCalls.isEmpty()) return; // No ready calls to promote.
+    List<AsyncCall> executableCalls = new ArrayList<>();
+    boolean isRunning;
+    synchronized (this) {
+      for (Iterator<AsyncCall> i = readyAsyncCalls.iterator(); i.hasNext(); ) {
+        AsyncCall asyncCall = i.next();
 
-    for (Iterator<AsyncCall> i = readyAsyncCalls.iterator(); i.hasNext(); ) {
-      AsyncCall call = i.next();
+        if (runningAsyncCalls.size() >= maxRequests) break; // Max capacity.
+        if (runningCallsForHost(asyncCall) >= maxRequestsPerHost) continue; // Host max capacity.
 
-      if (runningCallsForHost(call) < maxRequestsPerHost) {
         i.remove();
-        runningAsyncCalls.add(call);
-        executorService().execute(call);
+        executableCalls.add(asyncCall);
+        runningAsyncCalls.add(asyncCall);
       }
-
-      if (runningAsyncCalls.size() >= maxRequests) return; // Reached max capacity.
+      isRunning = runningCallsCount() > 0;
     }
+
+    for (int i = 0, size = executableCalls.size(); i < size; i++) {
+      AsyncCall asyncCall = executableCalls.get(i);
+      asyncCall.executeOn(executorService());
+    }
+
+    return isRunning;
   }
 
   /** Returns the number of running calls that share a host with {@code call}. */
   private int runningCallsForHost(AsyncCall call) {
     int result = 0;
     for (AsyncCall c : runningAsyncCalls) {
+      if (c.get().forWebSocket) continue;
       if (c.host().equals(call.host())) result++;
     }
     return result;
@@ -170,9 +204,28 @@ public final class Dispatcher {
     runningSyncCalls.add(call);
   }
 
+  /** Used by {@code AsyncCall#run} to signal completion. */
+  void finished(AsyncCall call) {
+    finished(runningAsyncCalls, call);
+  }
+
   /** Used by {@code Call#execute} to signal completion. */
-  synchronized void finished(Call call) {
-    if (!runningSyncCalls.remove(call)) throw new AssertionError("Call wasn't in-flight!");
+  void finished(RealCall call) {
+    finished(runningSyncCalls, call);
+  }
+
+  private <T> void finished(Deque<T> calls, T call) {
+    Runnable idleCallback;
+    synchronized (this) {
+      if (!calls.remove(call)) throw new AssertionError("Call wasn't in-flight!");
+      idleCallback = this.idleCallback;
+    }
+
+    boolean isRunning = promoteAndExecute();
+
+    if (!isRunning && idleCallback != null) {
+      idleCallback.run();
+    }
   }
 
   /** Returns a snapshot of the calls currently awaiting execution. */

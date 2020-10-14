@@ -16,11 +16,13 @@
 package com.squareup.okhttp;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * Observes, modifies, and potentially short-circuits requests going out and the corresponding
- * requests coming back in. Typically interceptors will be used to add, remove, or transform headers
- * on the request or response.
+ * responses coming back in. Typically interceptors add, remove, or transform headers on the request
+ * or response.
  */
 public interface Interceptor {
   Response intercept(Chain chain) throws IOException;
@@ -30,6 +32,24 @@ public interface Interceptor {
 
     Response proceed(Request request) throws IOException;
 
-    Connection connection();
+    /**
+     * Returns the connection the request will be executed on. This is only available in the chains
+     * of network interceptors; for application interceptors this is always null.
+     */
+    @Nullable Connection connection();
+
+    Call call();
+
+    int connectTimeoutMillis();
+
+    Chain withConnectTimeout(int timeout, TimeUnit unit);
+
+    int readTimeoutMillis();
+
+    Chain withReadTimeout(int timeout, TimeUnit unit);
+
+    int writeTimeoutMillis();
+
+    Chain withWriteTimeout(int timeout, TimeUnit unit);
   }
 }

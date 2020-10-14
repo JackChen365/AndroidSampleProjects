@@ -19,6 +19,7 @@ import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 
 /**
  * An <a href="http://tools.ietf.org/html/rfc2045">RFC 2045</a> Media Type, appropriate to describe
@@ -34,9 +35,9 @@ public final class MediaType {
   private final String mediaType;
   private final String type;
   private final String subtype;
-  private final String charset;
+  private final @Nullable String charset;
 
-  private MediaType(String mediaType, String type, String subtype, String charset) {
+  private MediaType(String mediaType, String type, String subtype, @Nullable String charset) {
     this.mediaType = mediaType;
     this.type = type;
     this.subtype = subtype;
@@ -44,12 +45,15 @@ public final class MediaType {
   }
 
   /**
-   * Returns a media type for {@code string}, or null if {@code string} is not a well-formed media
-   * type.
+   * Returns a media type for {@code string}.
+   *
+   * @throws IllegalArgumentException if {@code string} is not a well-formed media type.
    */
-  public static MediaType parse(String string) {
+  public static MediaType get(String string) {
     Matcher typeSubtype = TYPE_SUBTYPE.matcher(string);
-    if (!typeSubtype.lookingAt()) return null;
+    if (!typeSubtype.lookingAt()) {
+      throw new IllegalArgumentException("No subtype found for: \"" + string + '"');
+    }
     String type = typeSubtype.group(1).toLowerCase(Locale.US);
     String subtype = typeSubtype.group(2).toLowerCase(Locale.US);
 
@@ -57,20 +61,52 @@ public final class MediaType {
     Matcher parameter = PARAMETER.matcher(string);
     for (int s = typeSubtype.end(); s < string.length(); s = parameter.end()) {
       parameter.region(s, string.length());
-      if (!parameter.lookingAt()) return null; // This is not a well-formed media type.
+      if (!parameter.lookingAt()) {
+        throw new IllegalArgumentException("Parameter is not formatted correctly: \""
+            + string.substring(s)
+            + "\" for: \""
+            + string
+            + '"');
+      }
 
       String name = parameter.group(1);
       if (name == null || !name.equalsIgnoreCase("charset")) continue;
-      String charsetParameter = parameter.group(2) != null
-          ? parameter.group(2)  // Value is a token.
-          : parameter.group(3); // Value is a quoted string.
+      String charsetParameter;
+      String token = parameter.group(2);
+      if (token != null) {
+        // If the token is 'single-quoted' it's invalid! But we're lenient and strip the quotes.
+        charsetParameter = (token.startsWith("'") && token.endsWith("'") && token.length() > 2)
+            ? token.substring(1, token.length() - 1)
+            : token;
+      } else {
+        // Value is "double-quoted". That's valid and our regex group already strips the quotes.
+        charsetParameter = parameter.group(3);
+      }
       if (charset != null && !charsetParameter.equalsIgnoreCase(charset)) {
-        throw new IllegalArgumentException("Multiple different charsets: " + string);
+        throw new IllegalArgumentException("Multiple charsets defined: \""
+            + charset
+            + "\" and: \""
+            + charsetParameter
+            + "\" for: \""
+            + string
+            + '"');
       }
       charset = charsetParameter;
     }
 
     return new MediaType(string, type, subtype, charset);
+  }
+
+  /**
+   * Returns a media type for {@code string}, or null if {@code string} is not a well-formed media
+   * type.
+   */
+  public static @Nullable MediaType parse(String string) {
+    try {
+      return get(string);
+    } catch (IllegalArgumentException ignored) {
+      return null;
+    }
   }
 
   /**
@@ -91,16 +127,20 @@ public final class MediaType {
   /**
    * Returns the charset of this media type, or null if this media type doesn't specify a charset.
    */
-  public Charset charset() {
-    return charset != null ? Charset.forName(charset) : null;
+  public @Nullable Charset charset() {
+    return charset(null);
   }
 
   /**
-   * Returns the charset of this media type, or {@code defaultValue} if this media type doesn't
-   * specify a charset.
+   * Returns the charset of this media type, or {@code defaultValue} if either this media type
+   * doesn't specify a charset, of it its charset is unsupported by the current runtime.
    */
-  public Charset charset(Charset defaultValue) {
-    return charset != null ? Charset.forName(charset) : defaultValue;
+  public @Nullable Charset charset(@Nullable Charset defaultValue) {
+    try {
+      return charset != null ? Charset.forName(charset) : defaultValue;
+    } catch (IllegalArgumentException e) {
+      return defaultValue; // This charset is invalid or unsupported. Give up.
+    }
   }
 
   /**
@@ -111,8 +151,8 @@ public final class MediaType {
     return mediaType;
   }
 
-  @Override public boolean equals(Object o) {
-    return o instanceof MediaType && ((MediaType) o).mediaType.equals(mediaType);
+  @Override public boolean equals(@Nullable Object other) {
+    return other instanceof MediaType && ((MediaType) other).mediaType.equals(mediaType);
   }
 
   @Override public int hashCode() {

@@ -15,27 +15,29 @@
  */
 package com.squareup.okhttp;
 
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
-import java.util.logging.Logger;
+import java.io.IOException;
+import java.net.Socket;
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
-import com.squareup.okhttp.Address;
-import com.squareup.okhttp.Call;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.ConnectionPool;
-import com.squareup.okhttp.ConnectionSpec;
-import com.squareup.okhttp.Headers;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.internal.http.StreamAllocation;
-import com.squareup.okhttp.internal.io.RealConnection;
+import okhttp3.Address;
+import okhttp3.Call;
+import okhttp3.ConnectionPool;
+import okhttp3.ConnectionSpec;
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.Route;
+import okhttp3.internal.cache.InternalCache;
+import okhttp3.internal.connection.RealConnection;
+import okhttp3.internal.connection.RouteDatabase;
+import okhttp3.internal.connection.StreamAllocation;
 
 /**
  * Escalate internal APIs in {@code okhttp3} so they can be used from OkHttp's implementation
  * packages. The only implementation of this interface is in {@link OkHttpClient}.
  */
 public abstract class Internal {
-  public static final Logger logger = Logger.getLogger(OkHttpClient.class.getName());
 
   public static void initializeInstanceForTests() {
     // Needed in tests to ensure that the instance is actually pointing to something.
@@ -50,9 +52,12 @@ public abstract class Internal {
 
   public abstract void setCache(OkHttpClient.Builder builder, InternalCache internalCache);
 
-  public abstract InternalCache internalCache(OkHttpClient client);
+  public abstract RealConnection get(ConnectionPool pool, Address address,
+      StreamAllocation streamAllocation, Route route);
 
-  public abstract RealConnection get(
+  public abstract boolean equalsNonHost(Address a, Address b);
+
+  public abstract Socket deduplicate(
       ConnectionPool pool, Address address, StreamAllocation streamAllocation);
 
   public abstract void put(ConnectionPool pool, RealConnection connection);
@@ -61,14 +66,16 @@ public abstract class Internal {
 
   public abstract RouteDatabase routeDatabase(ConnectionPool connectionPool);
 
+  public abstract int code(Response.Builder responseBuilder);
+
   public abstract void apply(ConnectionSpec tlsConfiguration, SSLSocket sslSocket,
       boolean isFallback);
 
-  public abstract HttpUrl getHttpUrlChecked(String url)
-      throws MalformedURLException, UnknownHostException;
+  public abstract boolean isInvalidHttpUrlHost(IllegalArgumentException e);
 
-  // TODO delete the following when web sockets move into the main package.
-  public abstract void callEnqueue(Call call, Callback responseCallback, boolean forWebSocket);
+  public abstract StreamAllocation streamAllocation(Call call);
 
-  public abstract StreamAllocation callEngineGetStreamAllocation(Call call);
+  public abstract @Nullable IOException timeoutExit(Call call, @Nullable IOException e);
+
+  public abstract Call newWebSocketCall(OkHttpClient client, Request request);
 }

@@ -17,6 +17,7 @@
 package com.squareup.okhttp;
 
 import java.lang.ref.Reference;
+import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -26,18 +27,19 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import com.squareup.okhttp.internal.Internal;
-import com.squareup.okhttp.internal.RouteDatabase;
-import com.squareup.okhttp.internal.Util;
-import com.squareup.okhttp.internal.http.StreamAllocation;
-import com.squareup.okhttp.internal.io.RealConnection;
+import javax.annotation.Nullable;
+import okhttp3.internal.Util;
+import okhttp3.internal.connection.RealConnection;
+import okhttp3.internal.connection.RouteDatabase;
+import okhttp3.internal.connection.StreamAllocation;
+import okhttp3.internal.platform.Platform;
 
-import static com.squareup.okhttp.internal.Util.closeQuietly;
+import static okhttp3.internal.Util.closeQuietly;
 
 /**
- * Manages reuse of HTTP and SPDY connections for reduced network latency. HTTP requests that share
- * the same {@link Address} may share a {@link Connection}. This class implements the policy of
- * which connections to keep open for future use.
+ * Manages reuse of HTTP and HTTP/2 connections for reduced network latency. HTTP requests that
+ * share the same {@link Address} may share a {@link Connection}. This class implements the policy
+ * of which connections to keep open for future use.
  */
 public final class ConnectionPool {
   /**
@@ -105,7 +107,7 @@ public final class ConnectionPool {
 
   /**
    * Returns total number of connections in the pool. Note that prior to OkHttp 2.7 this included
-   * only idle connections and SPDY connections. Since OkHttp 2.7 this includes all connections,
+   * only idle connections and HTTP/2 connections. Since OkHttp 2.7 this includes all connections,
    * both active and inactive. Use {@link #idleConnectionCount()} to count connections not currently
    * in use.
    */
@@ -113,17 +115,32 @@ public final class ConnectionPool {
     return connections.size();
   }
 
-  /** Returns a recycled connection to {@code address}, or null if no such connection exists. */
-  RealConnection get(Address address, StreamAllocation streamAllocation) {
+  /**
+   * Returns a recycled connection to {@code address}, or null if no such connection exists. The
+   * route is null if the address has not yet been routed.
+   */
+  @Nullable RealConnection get(Address address, StreamAllocation streamAllocation, Route route) {
     assert (Thread.holdsLock(this));
     for (RealConnection connection : connections) {
-      // TODO(jwilson): this is awkward. We're already holding a lock on 'this', and
-      //     connection.allocationLimit() may also lock the FramedConnection.
-      if (connection.allocations.size() < connection.allocationLimit()
-          && address.equals(connection.route().address)
-          && !connection.noNewStreams) {
-        streamAllocation.acquire(connection);
+      if (connection.isEligible(address, route)) {
+        streamAllocation.acquire(connection, true);
         return connection;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Replaces the connection held by {@code streamAllocation} with a shared connection if possible.
+   * This recovers when multiple multiplexed connections are created concurrently.
+   */
+  @Nullable Socket deduplicate(Address address, StreamAllocation streamAllocation) {
+    assert (Thread.holdsLock(this));
+    for (RealConnection connection : connections) {
+      if (connection.isEligible(address, null)
+          && connection.isMultiplexed()
+          && connection != streamAllocation.connection()) {
+        return streamAllocation.releaseAndAcquire(connection);
       }
     }
     return null;
@@ -247,8 +264,12 @@ public final class ConnectionPool {
       }
 
       // We've discovered a leaked allocation. This is an application bug.
-      Internal.logger.warning("A connection to " + connection.route().address().url()
-          + " was leaked. Did you forget to close a response body?");
+      StreamAllocation.StreamAllocationReference streamAllocRef =
+          (StreamAllocation.StreamAllocationReference) reference;
+      String message = "A connection to " + connection.route().address().url()
+          + " was leaked. Did you forget to close a response body?";
+      Platform.get().logCloseableLeak(message, streamAllocRef.callStackTrace);
+
       references.remove(i);
       connection.noNewStreams = true;
 

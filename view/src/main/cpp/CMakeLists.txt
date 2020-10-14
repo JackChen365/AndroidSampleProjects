@@ -9,9 +9,9 @@ cmake_minimum_required(VERSION 3.9)
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
-add_library(helloskia
+add_library(surfaceView
         SHARED
-        helloskia.cpp)
+        android_view_Surface.cpp)
 
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -31,5 +31,5 @@ find_library( # Sets the name of the path variable.
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
-target_link_libraries(helloskia ${log-lib} )
+target_link_libraries(surfaceView ${log-lib} )
 

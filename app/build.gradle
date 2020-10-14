@@ -47,6 +47,5 @@ dependencies {
     implementation project(path: ':gesture')
     implementation project(path: ':layouttransition')
     implementation project(path: ':simplenested')
-    implementation project(path: ':okhttp1x')
 
 }
